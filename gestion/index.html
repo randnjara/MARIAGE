@@ -411,6 +411,15 @@ html.mode-admin #wrap{display:none}
 .seg button[aria-pressed="true"][data-v="attente"]{background:var(--wait);color:#fff}
 .seg button[aria-pressed="true"][data-v="oui"]{background:var(--ok);color:#fff}
 .seg button[aria-pressed="true"][data-v="non"]{background:var(--no);color:#fff}
+.side{display:grid;grid-template-columns:auto 1fr 1fr;align-items:center;gap:0;border:1px solid rgba(107,74,47,.3);border-radius:10px;overflow:hidden;font:500 13px/1 var(--sans)}
+.side>span{padding:0 10px;color:var(--caramel);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.side button{font:500 13px/1 var(--sans);padding:9px 4px;border:0;border-left:1px solid rgba(107,74,47,.2);background:transparent;color:var(--brown);cursor:pointer}
+.side button[aria-pressed="true"]{background:var(--brown);color:#fff}
+.sides{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin:-8px 0 22px}
+.sidecard{border:1px solid rgba(107,74,47,.25);border-radius:14px;padding:12px 16px;background:rgba(255,253,249,.7);cursor:pointer;text-align:left;font:14px/1.5 var(--sans);color:var(--espresso)}
+.sidecard b{display:block;font:600 18px var(--serif);color:var(--brown)}
+.sidecard[aria-pressed="true"]{outline:2px solid var(--brown)}
+.pill.sd{background:var(--brown);color:#fff}
 .coming{display:flex;align-items:center;gap:10px;font-size:14px}
 .coming input{width:70px;font:15px var(--sans);padding:7px;border-radius:8px;border:1px solid rgba(107,74,47,.3);background:#fffdf9}
 .acts{display:flex;flex-wrap:wrap;gap:8px}
@@ -449,11 +458,13 @@ html.mode-admin #wrap{display:none}
   <p class="share" id="shareNote">Chaque famille reçoit son propre lien. Quand une famille répond sur son invitation, sa réponse s'affiche ici toute seule. Cette page n'est visible qu'avec votre compte Google.</p>
   <section class="stats" id="stats"></section>
   <section class="side" id="lastResp" hidden style="margin-bottom:18px"></section>
+  <section class="sides" id="sides"></section>
   <nav class="tabs" role="tablist"><button role="tab" aria-selected="true" data-tab="fam" type="button">Familles</button><button role="tab" aria-selected="false" data-tab="tab" type="button">Plan de tables</button></nav>
   <section id="tabFam">
     <div class="toolbar">
       <input type="search" id="q" placeholder="Rechercher une famille" aria-label="Rechercher une famille">
       <select id="fStatus" aria-label="Filtrer par réponse"><option value="">Toutes les réponses</option><option value="attente">En attente</option><option value="oui">Viennent</option><option value="non">Ne viennent pas</option><option value="nonenv">Invitation pas encore envoyée</option></select>
+      <select id="fSide" aria-label="Filtrer par côté"><option value="">Les deux familles</option><option value="njara">Famille Njara</option><option value="tsidy">Famille Tsidy</option><option value="none">À classer</option></select>
       <button class="a-btn sec" type="button" id="aImport">Importer Excel</button>
       <button class="a-btn" type="button" id="aAdd">Ajouter une famille</button>
       <input type="file" id="file" accept=".xlsx,.xls,.csv" hidden>
@@ -475,6 +486,7 @@ html.mode-admin #wrap{display:none}
   <h2 id="eTitle">Ajouter une famille</h2>
   <label class="fld">Nom affiché sur l'invitation<input id="eName" required placeholder="Famille Rakoto"></label>
   <label class="fld">Nombre de places<input id="eSeats" type="number" min="1" value="2" required></label>
+  <label class="fld">Côté<select id="eSide"><option value="">À classer</option><option value="njara">Famille Njara</option><option value="tsidy">Famille Tsidy</option></select></label>
   <label class="fld">Téléphone WhatsApp (facultatif)<input id="ePhone" inputmode="tel" placeholder="034 00 000 00"></label>
   <div class="acts" style="justify-content:space-between"><button type="button" class="a-btn sec" id="eDel" hidden>Supprimer</button><span class="acts"><button type="button" class="a-btn sec" id="eCancel">Annuler</button><button class="a-btn" type="submit">Enregistrer</button></span></div>
 </form></div>
@@ -482,6 +494,8 @@ html.mode-admin #wrap{display:none}
 <div class="overlay" id="ovImp" hidden><div class="panel">
   <h2>Importer la liste</h2>
   <p style="margin-top:0;font-size:14px" id="iInfo"></p>
+  <label class="fld">Feuille<select id="iSheet"></select></label>
+  <label class="fld">Ces familles sont du côté<select id="iSide"><option value="">Ne pas changer / à classer</option><option value="njara">Famille Njara</option><option value="tsidy">Famille Tsidy</option></select></label>
   <label class="fld">Colonne du nom<select id="iName"></select></label>
   <label class="fld">Colonne du nombre d'invités<select id="iSeats"></select></label>
   <label class="fld">Colonne du téléphone<select id="iPhone"></select></label>
@@ -656,17 +670,23 @@ async function save(ref, data){ try { await ref.update(data); } catch(e){ toast(
 function render(){
   const tot = families.reduce((a,f)=>{ a.seats+=f.seats||0; if(f.status==='oui'){a.oui+=f.coming??f.seats; a.fo++;} else if(f.status==='non'){a.non+=f.seats||0;} else a.wait++; a.plan+=heads(f); return a; }, {seats:0,oui:0,fo:0,non:0,wait:0,plan:0});
   $('#stats').innerHTML = [[families.length,'Familles'],[tot.seats,'Places invitées'],[tot.oui,'Personnes confirmées'],[tot.wait,'Familles sans réponse'],[tot.non,'Places déclinées'],[tot.plan,'Total prévu']].map(([n,l])=>`<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('');
+  const SN = {njara:'Famille Njara', tsidy:'Famille Tsidy'}, fsd = $('#fSide').value;
+  $('#sides').innerHTML = ['njara','tsidy','none'].map(k => { const l = families.filter(f => (f.side||'none')===k); if (k==='none' && !l.length) return '';
+    const t = l.reduce((a,f)=>{ a.seats+=f.seats||0; if(f.status==='oui') a.oui+=f.coming??f.seats; else if(f.status!=='non') a.wait++; return a; }, {seats:0,oui:0,wait:0});
+    return `<button type="button" class="sidecard" data-side="${k}" aria-pressed="${fsd===k}"><b>${SN[k]||'À classer'}</b>${l.length} famille${l.length>1?'s':''} · ${t.seats} place${t.seats>1?'s':''} · ${t.oui} confirmé${t.oui>1?'s':''} · ${t.wait} sans réponse</button>`; }).join('');
   renderFamilies(); renderTables();
 }
+$('#sides').addEventListener('click', e => { const b = e.target.closest('[data-side]'); if (!b) return; $('#fSide').value = $('#fSide').value===b.dataset.side ? '' : b.dataset.side; render(); });
 function renderFamilies(){
-  const q = norm($('#q').value), st = $('#fStatus').value;
-  const list = families.filter(f => (!q || norm(f.name).includes(q)) && (!st || (st==='nonenv' ? !f.sent : (f.status||'attente')===st)));
+  const q = norm($('#q').value), st = $('#fStatus').value, sd = $('#fSide').value;
+  const list = families.filter(f => (!q || norm(f.name).includes(q)) && (!sd || (f.side||'none')===sd) && (!st || (st==='nonenv' ? !f.sent : (f.status||'attente')===st)));
   if (!families.length){ $('#famList').innerHTML = '<div class="empty"><h3>Aucune famille pour l’instant</h3>Importez votre fichier Excel (une colonne pour le nom, une pour le nombre d’invités) ou ajoutez une famille à la main.<p><button class="a-btn" type="button" id="seedBtn">Charger mes 50 familles</button></p></div>'; return; }
   if (!list.length){ $('#famList').innerHTML = '<div class="empty">Aucune famille ne correspond à ce filtre.</div>'; return; }
   const topts = sel => `<option value="">Sans table</option>` + tables.map(t=>`<option value="${esc(t.id)}"${t.id===sel?' selected':''}>${esc(t.name)}</option>`).join('');
   $('#famList').innerHTML = '<div class="grid">' + list.map(f => { const s = f.status||'attente'; const ph = waPhone(f.phone); return `
   <article class="fam" data-id="${esc(f.id)}">
     <div class="fam-h"><b>${esc(f.name)}</b><span class="pill">${f.seats} place${f.seats>1?'s':''}</span></div>
+    <div class="side" role="group" aria-label="Côté"><span>Côté</span>${[['njara','Njara'],['tsidy','Tsidy']].map(([v,l])=>`<button type="button" data-act="side" data-v="${v}" aria-pressed="${f.side===v}">${l}</button>`).join('')}</div>
     <div class="meta">${f.adults != null ? `<span>${f.adults} adulte${f.adults>1?'s':''}${f.kids ? ` · ${f.kids} enfant${f.kids>1?'s':''}` : ''}</span>` : ''}<span>${f.sent ? 'Invitation envoyée' : 'Pas encore envoyée'}</span>${f.phone ? `<span>${esc(f.phone)}</span>` : ''}<label>Table <select data-act="table">${topts(f.table)}</select></label></div>
     <div class="seg" role="group" aria-label="Réponse">${[['attente','En attente'],['oui','Vient'],['non','Ne vient pas']].map(([v,l])=>`<button type="button" data-act="status" data-v="${v}" aria-pressed="${s===v}">${l}</button>`).join('')}</div>
     ${s==='oui' ? `<label class="coming">Personnes présentes <input type="number" min="1" max="${f.seats}" value="${f.coming ?? f.seats}" data-act="coming"></label>` : ''}
@@ -677,6 +697,7 @@ $('#famList').addEventListener('click', async e => {
   const el = e.target.closest('[data-act]'); if (!el) return; const f = families.find(x => x.id === el.closest('.fam').dataset.id); if (!f) return;
   const act = el.dataset.act;
   if (act==='status'){ const v = el.dataset.v; save(fdoc(f.id), v==='oui' ? {status:v, coming:f.coming ?? f.seats} : {status:v}); }
+  if (act==='side') save(fdoc(f.id), {side: f.side===el.dataset.v ? '' : el.dataset.v});
   if (act==='send'){ if (!f.sent) save(fdoc(f.id), {sent:true}); }
   if (act==='copy'){ const link = invLink(f); try { await navigator.clipboard.writeText(link); toast('Lien copié pour ' + f.name); } catch(err){ toast(link); } }
   if (act==='view') startInvite({n:f.name, s:f.seats}, true);
@@ -687,7 +708,7 @@ $('#famList').addEventListener('change', e => {
   if (el.dataset.act==='table') save(fdoc(f.id), {table: el.value});
   if (el.dataset.act==='coming'){ const n = Math.max(1, Math.min(f.seats, parseInt(el.value,10)||1)); save(fdoc(f.id), {coming:n}); }
 });
-$('#q').addEventListener('input', renderFamilies); $('#fStatus').addEventListener('change', renderFamilies);
+$('#q').addEventListener('input', renderFamilies); $('#fStatus').addEventListener('change', renderFamilies); $('#fSide').addEventListener('change', render);
 document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => {
   tab = b.dataset.tab; document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-selected', x===b));
   $('#tabFam').hidden = tab!=='fam'; $('#tabTab').hidden = tab!=='tab';
@@ -698,7 +719,7 @@ $('#aPreview').addEventListener('click', () => startInvite(families[0] ? {n:fami
 function openEdit(f){
   editId = f ? f.id : null; delArmed = false;
   $('#eTitle').textContent = f ? 'Modifier la famille' : 'Ajouter une famille';
-  $('#eName').value = f ? f.name : ''; $('#eSeats').value = f ? f.seats : 2; $('#ePhone').value = f ? (f.phone||'') : '';
+  $('#eName').value = f ? f.name : ''; $('#eSeats').value = f ? f.seats : 2; $('#ePhone').value = f ? (f.phone||'') : ''; $('#eSide').value = f ? (f.side||'') : ($('#fSide').value==='none' ? '' : $('#fSide').value);
   $('#eDel').hidden = !f; $('#eDel').textContent = 'Supprimer';
   $('#ovEdit').hidden = false; $('#eName').focus();
 }
@@ -706,7 +727,7 @@ $('#aAdd').addEventListener('click', () => db ? openEdit(null) : toast('Gestion 
 $('#eCancel').addEventListener('click', () => $('#ovEdit').hidden = true);
 $('#fEdit').addEventListener('submit', async e => {
   e.preventDefault();
-  const data = { name: $('#eName').value.trim(), seats: Math.max(1, parseInt($('#eSeats').value,10)||1), phone: $('#ePhone').value.trim() };
+  const data = { name: $('#eName').value.trim(), seats: Math.max(1, parseInt($('#eSeats').value,10)||1), phone: $('#ePhone').value.trim(), side: $('#eSide').value };
   if (!data.name) return;
   try {
     if (editId) await fdoc(editId).update(data);
@@ -720,24 +741,33 @@ $('#eDel').addEventListener('click', async () => {
 });
 
 /* Excel import */
-let rows = [], header = [];
+let rows = [], header = [], impWb = null;
+function loadSheet(k){
+  const name = impWb.SheetNames[k];
+  const all = XLSX.utils.sheet_to_json(impWb.Sheets[name], { header:1, defval:'', raw:false }).filter(r => r.some(c => String(c).trim()));
+  if (!all.length){ toast('La feuille « ' + name + ' » est vide'); return false; }
+  const hasHeader = all[0].some(c => /nom|famil|name|nomb|invit|place|t[ée]l|total/i.test(String(c)));
+  header = hasHeader ? all[0].map((c,i) => String(c).trim() || `Colonne ${i+1}`) : all[0].map((c,i) => `Colonne ${i+1}`);
+  rows = hasHeader ? all.slice(1) : all;
+  const pick = (re, fb) => { const i = header.findIndex(h => re.test(h)); return i >= 0 ? i : fb; };
+  const opts = (sel, none) => (none ? '<option value="-1">Aucune</option>' : '') + header.map((h,i)=>`<option value="${i}"${i===sel?' selected':''}>${esc(h)}</option>`).join('');
+  $('#iName').innerHTML = opts(pick(/nom|famil|name|invit[ée]/i, 0));
+  $('#iSeats').innerHTML = opts(pick(/nomb|nb|places?|pers|total|qt/i, Math.min(1, header.length-1)));
+  $('#iPhone').innerHTML = opts(pick(/t[ée]l|phone|contact|num[ée]ro|whats/i, -1), true);
+  $('#iSide').value = /tsidy/i.test(name) && !/njara/i.test(name) ? 'tsidy' : /njara/i.test(name) && !/tsidy/i.test(name) ? 'njara' : ($('#fSide').value==='none' ? '' : $('#fSide').value);
+  $('#iInfo').textContent = `${rows.length} ligne${rows.length>1?'s':''} trouvée${rows.length>1?'s':''} dans « ${name} ». Vérifiez les colonnes, puis importez. Une famille déjà présente (même nom) est mise à jour.`;
+  previewImport(); return true;
+}
 $('#aImport').addEventListener('click', () => db ? $('#file').click() : toast('Gestion indisponible'));
 $('#file').addEventListener('change', async e => {
   const file = e.target.files[0]; e.target.value = ''; if (!file) return;
   if (!window.XLSX){ toast('Le lecteur Excel n’a pas pu se charger'); return; }
   try {
     const wb = XLSX.read(await file.arrayBuffer(), { type:'array' });
-    const all = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header:1, defval:'', raw:false }).filter(r => r.some(c => String(c).trim()));
-    if (!all.length){ toast('Le fichier est vide'); return; }
-    const hasHeader = all[0].some(c => /nom|famil|name|nomb|invit|place|t[ée]l|total/i.test(String(c)));
-    header = hasHeader ? all[0].map((c,i) => String(c).trim() || `Colonne ${i+1}`) : all[0].map((c,i) => `Colonne ${i+1}`);
-    rows = hasHeader ? all.slice(1) : all;
-    const pick = (re, fb) => { const i = header.findIndex(h => re.test(h)); return i >= 0 ? i : fb; };
-    const opts = (sel, none) => (none ? '<option value="-1">Aucune</option>' : '') + header.map((h,i)=>`<option value="${i}"${i===sel?' selected':''}>${esc(h)}</option>`).join('');
-    $('#iName').innerHTML = opts(pick(/nom|famil|name|invit[ée]/i, 0));
-    $('#iSeats').innerHTML = opts(pick(/nomb|nb|places?|pers|total|qt/i, Math.min(1, header.length-1)));
-    $('#iPhone').innerHTML = opts(pick(/t[ée]l|phone|contact|num[ée]ro|whats/i, -1), true);
-    $('#iInfo').textContent = `${rows.length} ligne${rows.length>1?'s':''} trouvée${rows.length>1?'s':''} dans « ${wb.SheetNames[0]} ». Vérifiez les colonnes, puis importez. Une famille déjà présente (même nom) est mise à jour.`;
+    impWb = wb;
+    $('#iSheet').innerHTML = wb.SheetNames.map((n,i)=>`<option value="${i}">${esc(n)}</option>`).join('');
+    $('#iSheet').closest('label').style.display = wb.SheetNames.length < 2 ? 'none' : '';
+    if (!loadSheet(0)) return;
     previewImport(); $('#ovImp').hidden = false;
   } catch(err){ toast('Impossible de lire ce fichier'); }
 });
@@ -749,14 +779,15 @@ function parsed(){
 }
 function previewImport(){ const p = parsed(); $('#iPrev').innerHTML = '<tr><th>Nom</th><th>Places</th><th>Téléphone</th></tr>' + p.slice(0,8).map(x=>`<tr><td>${esc(x.name)}</td><td>${x.seats}</td><td>${esc(x.phone)}</td></tr>`).join('') + (p.length>8 ? `<tr><td colspan="3">… et ${p.length-8} autres</td></tr>` : ''); $('#iGo').textContent = `Importer ${p.length} famille${p.length>1?'s':''}`; }
 ['#iName','#iSeats','#iPhone'].forEach(s => $(s).addEventListener('change', previewImport));
+$('#iSheet').addEventListener('change', () => loadSheet(+$('#iSheet').value));
 $('#iCancel').addEventListener('click', () => $('#ovImp').hidden = true);
 $('#iGo').addEventListener('click', async () => {
-  const p = parsed(); $('#iGo').disabled = true; let added = 0, upd = 0;
+  const p = parsed(), side = $('#iSide').value; $('#iGo').disabled = true; let added = 0, upd = 0;
   try {
     for (const x of p){
       const ex = families.find(f => norm(f.name) === norm(x.name));
-      if (ex){ const { name, phone, ...rest } = x; await fdoc(ex.id).update({ ...rest, ...(phone ? {phone} : {}) }); upd++; }
-      else { await db.collection('families').add({ ...x, status:'attente', coming:null, table:'', sent:false, created: Date.now() }); added++; }
+      if (ex){ const { name, phone, ...rest } = x; await fdoc(ex.id).update({ ...rest, ...(phone ? {phone} : {}), ...(side ? {side} : {}) }); upd++; }
+      else { await db.collection('families').add({ ...x, side, status:'attente', coming:null, table:'', sent:false, created: Date.now() }); added++; }
       $('#iGo').textContent = `Import… ${added+upd}/${p.length}`;
     }
     $('#ovImp').hidden = true; toast(`${added} famille${added>1?'s':''} ajoutée${added>1?'s':''}, ${upd} mise${upd>1?'s':''} à jour`);
@@ -819,7 +850,7 @@ $('#aExport').addEventListener('click', async () => {
   if (!downloads || !window.XLSX) return;
   const tname = id => (tables.find(t=>t.id===id)||{}).name || '';
   const lab = {attente:'En attente', oui:'Vient', non:'Ne vient pas'};
-  const s1 = families.map(f => ({ 'Famille':f.name, 'Adultes':f.adults ?? '', 'Enfants':f.kids ?? '', 'Places invitées':f.seats,'Téléphone':f.phone||'', 'Invitation envoyée':f.sent?'Oui':'Non', 'Réponse':lab[f.status||'attente'], 'Personnes prévues':heads(f), 'Table':tname(f.table) }));
+  const s1 = families.map(f => ({ 'Côté':({njara:'Njara',tsidy:'Tsidy'})[f.side]||'', 'Famille':f.name, 'Adultes':f.adults ?? '', 'Enfants':f.kids ?? '', 'Places invitées':f.seats,'Téléphone':f.phone||'', 'Invitation envoyée':f.sent?'Oui':'Non', 'Réponse':lab[f.status||'attente'], 'Personnes prévues':heads(f), 'Table':tname(f.table) }));
   const s2 = tables.map(t => { const fs = families.filter(f=>f.table===t.id && f.status!=='non'); return { 'Table':t.name, 'Places':t.capacity||10, 'Personnes':fs.reduce((a,f)=>a+heads(f),0), 'Familles':fs.map(f=>`${f.name} (${heads(f)})`).join(', ') }; });
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(s1), 'Invités');
