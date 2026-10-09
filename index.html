@@ -526,16 +526,36 @@ function updateRsvp(){
 $('#minus').addEventListener('click', e => { e.stopPropagation(); count--; updateRsvp(); });
 $('#plus').addEventListener('click', e => { e.stopPropagation(); count++; updateRsvp(); });
 function note(t){ const n = $('#rsvpNote'); n.hidden = false; n.textContent = t; }
+const DEADLINE = Date.UTC(2026, 9, 30, 21, 0, 0); /* 30 octobre 2026 à minuit, heure de Madagascar */
+const MODIF = ' Vous pouvez encore la modifier jusqu’au 30 octobre 2026.';
+const rkey = () => 'rsvp_' + (guest ? (guest.id || guest.n) : 'general');
+const rget = () => { try { return JSON.parse(localStorage.getItem(rkey()) || 'null'); } catch(e){ return null; } };
+const rset = v => { try { localStorage.setItem(rkey(), JSON.stringify(v)); } catch(e){} };
+const rtxt = r => r.r === 'Vient' ? `Votre réponse est enregistrée : vous venez à ${r.p > 1 ? r.p + ' personnes' : '1 personne'}.` : 'Votre réponse est enregistrée : vous ne pourrez pas venir.';
+window.__rsvpInit = () => {
+  if (window.__preview || !window.__saveRsvp) return;
+  const prev = rget(), closed = Date.now() >= DEADLINE;
+  ['#stepper','#yes','#no','#howMany'].forEach(q => { $(q).style.display = closed ? 'none' : ''; });
+  if (closed){ $('#gName').hidden = true; note((prev ? rtxt(prev) + ' ' : '') + 'Les réponses sont closes depuis le 30 octobre 2026. Pour toute question, appelez Tsidy ou Njara.'); return; }
+  if (prev){ if (prev.r === 'Vient' && prev.p) { count = prev.p; updateRsvp(); } note(rtxt(prev) + MODIF); }
+};
 ['yes','no'].forEach(id => $('#'+id).addEventListener('click', e => {
   if (!window.__saveRsvp){ note('Merci ! WhatsApp s’ouvre avec votre message déjà écrit : appuyez sur Envoyer pour que nous le recevions.'); return; }
   e.preventDefault();
   if (window.__preview){ note('Aperçu : la réponse n’est pas enregistrée.'); return; }
+  if (Date.now() >= DEADLINE){ window.__rsvpInit(); return; }
   const name = guest ? guest.n : $('#gName').value.trim();
   if (!name){ $('#gName').focus(); note('Merci d’indiquer votre nom.'); return; }
-  note('Envoi de votre réponse…');
-  window.__saveRsvp({ familyId: guest ? guest.id : '', famille: name.slice(0,110), places: guest ? guest.s : 0, reponse: id==='yes' ? 'Vient' : 'Ne vient pas', personnes: id==='yes' ? count : 0, date: Date.now() })
-    .then(() => note(id==='yes' ? 'Merci ! Votre présence est bien enregistrée. À très bientôt !' : 'Merci de nous avoir prévenus. Votre réponse est bien enregistrée.'))
-    .catch(() => note('L’envoi a échoué. Vérifiez votre connexion et réessayez, ou appelez Tsidy ou Njara.'));
+  const r = { r: id==='yes' ? 'Vient' : 'Ne vient pas', p: id==='yes' ? count : 0 };
+  const prev = rget();
+  const thanks = (id==='yes' ? 'Merci ! ' : 'Merci de nous avoir prévenus. ') + rtxt(r) + MODIF;
+  if (window.__sending) return;
+  if (prev && prev.r === r.r && prev.p === r.p){ note(thanks); return; }
+  window.__sending = true; note('Envoi de votre réponse…');
+  window.__saveRsvp({ familyId: guest ? guest.id : '', famille: name.slice(0,110), places: guest ? guest.s : 0, reponse: r.r, personnes: r.p, date: Date.now() })
+    .then(() => { rset(r); note(thanks); })
+    .catch(() => note(Date.now() >= DEADLINE ? 'Les réponses sont closes depuis le 30 octobre 2026.' : 'L’envoi a échoué. Vérifiez votre connexion et réessayez, ou appelez Tsidy ou Njara.'))
+    .finally(() => { window.__sending = false; });
 }));
 function resetInvite(){
   clearTimeout(timer); opened = false; cur = 0;
@@ -553,7 +573,7 @@ function startInvite(g, preview){
   $('#howMany').textContent = guest && guest.s > 1 ? `Combien serez-vous ? (${guest.s} places)` : 'Combien serez-vous ?';
   count = guest ? guest.s : 1; updateRsvp();
   $('#back').hidden = !preview; $('#gName').hidden = !!guest; window.__preview = !!preview;
-  resetInvite(); fit();
+  resetInvite(); fit(); window.__rsvpInit && window.__rsvpInit();
 }
 $('#back').addEventListener('click', e => { e.stopPropagation(); startAdmin(); });
 
@@ -566,4 +586,5 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getFirestore, collection, addDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 const fs = getFirestore(initializeApp({"apiKey":"AIzaSyD-rwRcgk6su61-b1SZ19IMKkRIzK8nb-A","authDomain":"mariage-e5de1.firebaseapp.com","projectId":"mariage-e5de1","storageBucket":"mariage-e5de1.firebasestorage.app","messagingSenderId":"335035309165","appId":"1:335035309165:web:3e7978b9f22f8c32b07364"}));
 window.__saveRsvp = d => addDoc(collection(fs, 'reponses'), d);
+window.__rsvpInit && window.__rsvpInit();
 </script></body></html>
