@@ -402,7 +402,7 @@ let cur = 0, timer = null, opened = false, guest = null, count = 1;
 function show(i){
   const prev = scenes[cur];
   if (prev && prev !== scenes[i]){ prev.style.setProperty('--e','0s'); prev.classList.add('out'); prev.classList.remove('cur'); const p=prev; setTimeout(()=>{ if (scenes[cur]!==p) p.classList.remove('on','out'); }, 1200); }
-  if (i !== 0) film.pause();
+  if (i !== 0){ if (!film.muted) soundOn = true; film.pause(); musicFromFilm(); }
   const sc = scenes[i]; sc.classList.remove('on','out'); void sc.offsetWidth; sc.style.setProperty('--s','0s'); sc.classList.add('on','cur'); cur = i;
   [...bars.children].forEach((b,k)=>{ b.className = k < i-1 ? 'done' : ''; b.style.setProperty('--dur', PAGE+'ms'); });
   clearTimeout(timer);
@@ -416,17 +416,22 @@ function show(i){
   const r = $('#replay'); if (r) r.addEventListener('click', e => { e.stopPropagation(); resetInvite(); });
 }
 const film = document.getElementById('film');
+const music = new Audio(new URL('music.mp3', film.querySelector('source').src).href); music.loop = true; music.preload = 'auto'; window.__music = music;
+let soundOn = false, musicUnlocked = false;
+function unlockMusic(){ if (musicUnlocked) return; musicUnlocked = true; const p = music.play(); if (p && p.then) p.then(() => { if (cur === 0) music.pause(); }).catch(() => { musicUnlocked = false; }); }
+function musicFromFilm(){ if (!soundOn || !music.paused) return; let t = film.currentTime || 0; if (!isFinite(t)) t = 0; try { music.currentTime = t; } catch(e){} const p = music.play(); if (p && p.catch) p.catch(() => {}); }
 function openEnv(){ if (cur !== 0) return; const pr = film.play(); $('#playBtn').hidden = true; if (pr && pr.catch) pr.catch(() => { $('#playBtn').hidden = false; }); }
 function startFilm(){ try { film.currentTime = 0; } catch(e){} openEnv(); }
 film.addEventListener('ended', () => { if (cur === 0) show(1); });
 film.addEventListener('error', () => { if (cur === 0) setTimeout(() => cur === 0 && show(1), 1500); }, true);
 $('#playBtn').addEventListener('click', e => { e.stopPropagation(); openEnv(); });
 $('#skipBtn').addEventListener('click', e => { e.stopPropagation(); film.pause(); show(1); });
-function unmute(){ film.muted = false; $('#sndBtn').hidden = true; if (film.paused && cur === 0) openEnv(); }
+function unmute(){ soundOn = true; unlockMusic(); film.muted = false; $('#sndBtn').hidden = true; if (film.paused && cur === 0) openEnv(); }
 $('#sndBtn').addEventListener('click', e => { e.stopPropagation(); unmute(); });
 stage.addEventListener('click', e => {
   if (e.target.closest('a,button,.rsvp-form')) return;
   if (cur === 0) return unmute();
+  if (!soundOn){ soundOn = true; musicFromFilm(); }
   const r = stage.getBoundingClientRect(), x = (e.clientX - r.left)/r.width;
   if (x < .3) { if (cur > 1) show(cur-1); } else if (cur < scenes.length-1) show(cur+1);
 });
@@ -482,7 +487,7 @@ window.__rsvpInit = () => {
     .finally(() => { window.__sending = false; });
 }));
 function resetInvite(){
-  clearTimeout(timer); opened = false; cur = 0;
+  clearTimeout(timer); opened = false; cur = 0; music.pause();
   scenes.forEach(sc => { sc.classList.remove('on','out','cur','open'); });
   bars.classList.remove('show'); nav.classList.remove('show'); $('#rsvpNote').hidden = true;
   void env.offsetWidth; env.style.setProperty('--s','0s'); env.classList.add('on','cur');
