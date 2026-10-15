@@ -150,6 +150,7 @@ body{margin:0;background:var(--espresso);overflow:hidden;font-family:var(--serif
 .addr .script{font-size:92px;color:#f8efe2;text-shadow:0 2px 6px rgba(60,35,15,.35);white-space:nowrap;max-width:880px;overflow:hidden;text-overflow:ellipsis}
 .env.open .addr{animation:fadeOut .6s ease var(--o) forwards}
 .rsvp-form{display:flex;flex-direction:column;align-items:center;gap:26px;margin-top:44px}
+.tot{font:500 26px var(--sans);letter-spacing:.12em;color:var(--caramel);text-align:center;margin-top:6px}
 .steppers{display:flex;flex-direction:column;gap:18px;align-items:center}
 .srow{display:flex;align-items:center;gap:30px}
 .slab{font:500 34px var(--sans);letter-spacing:.18em;text-transform:uppercase;color:var(--caramel);width:230px;text-align:right}
@@ -254,6 +255,7 @@ body{margin:0;background:var(--espresso);overflow:hidden;font-family:var(--serif
         <div id="stepper" class="steppers">
           <div class="srow"><span class="slab">Adultes</span><div class="stepper"><button type="button" id="minus" aria-label="Un adulte de moins">−</button><output id="cnt">1</output><button type="button" id="plus" aria-label="Un adulte de plus">+</button></div></div>
           <div class="srow"><span class="slab">Enfants</span><div class="stepper"><button type="button" id="kMinus" aria-label="Un enfant de moins">−</button><output id="kCnt">0</output><button type="button" id="kPlus" aria-label="Un enfant de plus">+</button></div></div>
+          <div class="tot" id="tot" hidden></div>
         </div>
         <a class="btn-main" id="yes" target="_blank" rel="noopener" href="#">Je confirme ma présence</a>
         <a class="btn-ghost" id="no" target="_blank" rel="noopener" href="#">Je ne pourrai pas venir</a>
@@ -465,17 +467,19 @@ function updateRsvp(){
   const max = guest ? guest.s : 20;
   count = Math.max(1, Math.min(max, count)); kids = Math.max(0, Math.min(max - count, kids));
   $('#cnt').textContent = count; $('#kCnt').textContent = kids;
-  $('#minus').disabled = count <= 1; $('#plus').disabled = count + kids >= max;
-  $('#kMinus').disabled = kids <= 0; $('#kPlus').disabled = count + kids >= max;
+  const full = count + kids >= max;
+  $('#minus').disabled = count <= 1; $('#plus').disabled = full && kids <= 0;
+  $('#kMinus').disabled = kids <= 0; $('#kPlus').disabled = full && count <= 1;
+  const tot = $('#tot'); if (tot) { tot.hidden = !guest; tot.textContent = `${count + kids} place${count + kids > 1 ? 's' : ''} sur ${max}`; }
   const who = guest ? guest.n : '';
   const pers = `${count} adulte${count > 1 ? 's' : ''}` + (kids ? ` et ${kids} enfant${kids > 1 ? 's' : ''}` : '');
   $('#yes').href = waLink(REPLY_WA, `Bonjour Tsidy et Njara ! ${who ? 'Ici ' + who + '. ' : ''}Nous confirmons notre présence à vos Noces d'Étain et au baptême de Mihaja Kael le samedi 7 novembre 2026. Nous serons ${pers}.`);
   $('#no').href = waLink(REPLY_WA, `Bonjour Tsidy et Njara, ${who ? 'ici ' + who + '. ' : ''}Merci beaucoup pour votre invitation. Malheureusement nous ne pourrons pas être présents le 7 novembre 2026. Nous vous souhaitons une très belle fête !`);
 }
 $('#minus').addEventListener('click', e => { e.stopPropagation(); count--; updateRsvp(); });
-$('#plus').addEventListener('click', e => { e.stopPropagation(); count++; updateRsvp(); });
+$('#plus').addEventListener('click', e => { e.stopPropagation(); const max = guest ? guest.s : 20; if (count + kids >= max && kids > 0) kids--; count++; updateRsvp(); });
 $('#kMinus').addEventListener('click', e => { e.stopPropagation(); kids--; updateRsvp(); });
-$('#kPlus').addEventListener('click', e => { e.stopPropagation(); kids++; updateRsvp(); });
+$('#kPlus').addEventListener('click', e => { e.stopPropagation(); const max = guest ? guest.s : 20; if (count + kids >= max && count > 1) count--; kids++; updateRsvp(); });
 function note(t){ const n = $('#rsvpNote'); n.hidden = false; n.textContent = t; }
 const DEADLINE = Date.UTC(2026, 9, 30, 21, 0, 0); /* 30 octobre 2026 à minuit, heure de Madagascar */
 const MODIF = ' Vous pouvez encore la modifier jusqu’au 30 octobre 2026 : seule votre dernière réponse compte.';
