@@ -404,6 +404,7 @@ html.mode-admin #wrap{display:none}
       <select id="fStatus" aria-label="Filtrer par réponse"><option value="">Toutes les réponses</option><option value="attente">En attente</option><option value="oui">Viennent</option><option value="non">Ne viennent pas</option><option value="nonenv">Invitation pas encore envoyée</option></select>
       <select id="fSide" aria-label="Filtrer par côté"><option value="">Les deux familles</option><option value="njara">Famille Njara</option><option value="tsidy">Famille Tsidy</option><option value="none">À classer</option></select>
       <button class="a-btn sec" type="button" id="aImport">Importer Excel</button>
+      <button class="a-btn sec" type="button" id="aClear" style="color:#9b2c2c;border-color:rgba(155,44,44,.45)">Supprimer toute la liste</button>
       <button class="a-btn" type="button" id="aAdd">Ajouter une famille</button>
       <input type="file" id="file" accept=".xlsx,.xls,.csv" hidden>
     </div>
@@ -701,6 +702,14 @@ $('#fEdit').addEventListener('submit', async e => {
     else await db.collection('families').add({ ...data, status:'attente', coming:null, table:'', sent:false, created: Date.now() });
     $('#ovEdit').hidden = true;
   } catch(err){ toast('Enregistrement refusé : ' + (err.message||err.code)); }
+});
+$('#aClear').addEventListener('click', async () => {
+  const n = families.length;
+  if (!n){ toast('La liste est déjà vide.'); return; }
+  if (!confirm(`Supprimer les ${n} familles de la liste ? Cette action est définitive. Vous pourrez ensuite importer votre nouveau fichier Excel.`)) return;
+  let ok = 0;
+  for (const f of families.slice()){ try { await fdoc(f.id).delete(); ok++; } catch(err){} }
+  toast(ok === n ? `${n} familles supprimées. Vous pouvez importer le nouveau fichier.` : `${ok} sur ${n} familles supprimées. Réessayez pour les autres.`);
 });
 $('#eDel').addEventListener('click', async () => {
   if (!delArmed){ delArmed = true; $('#eDel').textContent = 'Confirmer la suppression'; return; }
