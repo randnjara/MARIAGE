@@ -645,6 +645,16 @@ let db = null, families = [], tables = [], adminStarted = false, tab = 'fam', ed
 const norm = s => String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
 const waPhone = p => { let d = String(p||'').replace(/\D/g,''); if (!d) return ''; if (d.startsWith('00')) d = d.slice(2); if (d.length===10 && d[0]==='0') d = '261'+d.slice(1); else if (d.length===9) d = '261'+d; return d; };
 const heads = f => f.status==='non' ? 0 : f.status==='oui' ? (f.coming ?? f.seats) : f.seats;
+// personnes d'une famille assises à une table (une famille peut être répartie sur plusieurs tables)
+function atT(f, tid){
+  const h = heads(f); if (!h || !f.table) return 0;
+  const a = f.alloc && f.alloc[f.table] != null ? f.alloc : null;
+  if (!a) return tid === f.table ? h : 0;
+  let rest = h; const out = {};
+  for (const [t, c] of Object.entries(a)){ if (t === f.table || !tables.some(x => x.id === t)) continue; const k = Math.min(c, rest); out[t] = k; rest -= k; }
+  out[f.table] = rest; return out[tid] || 0;
+}
+const atTable = tid => families.map(f => [f, atT(f, tid)]).filter(([, n]) => n > 0);
 const invLink = f => GUEST_URL + '?i=' + enc({n:f.name, s:f.seats, id:f.id, ...(f.adults != null ? {a:f.adults, e:f.kids||0} : {})});
 const invText = f => `Bonjour ${f.name},\nNous avons la joie de vous inviter à nos Noces d'Étain (10 ans de mariage) et au baptême de notre fils Andriatsididika Mihaja Kael, le samedi 7 novembre 2026 à 8h.\nVotre invitation : ${invLink(f)}\nMerci de confirmer avant le 30 octobre.\nTsidy & Njara`;
 
@@ -705,7 +715,7 @@ $('#famList').addEventListener('click', async e => {
 });
 $('#famList').addEventListener('change', e => {
   const el = e.target.closest('[data-act]'); if (!el) return; const f = families.find(x => x.id === el.closest('.fam').dataset.id); if (!f) return;
-  if (el.dataset.act==='table') save(fdoc(f.id), {table: el.value});
+  if (el.dataset.act==='table') save(fdoc(f.id), {table: el.value, alloc: null});
   if (el.dataset.act==='coming'){ const n = Math.max(1, Math.min(f.seats, parseInt(el.value,10)||1)); save(fdoc(f.id), {coming:n}); }
 });
 $('#q').addEventListener('input', renderFamilies); $('#fStatus').addEventListener('change', renderFamilies); $('#fCat').addEventListener('change', render); $('#fSide').addEventListener('change', render);
@@ -730,7 +740,7 @@ $('#aAdd').addEventListener('click', () => db ? openEdit(null) : toast('Gestion 
 $('#eCancel').addEventListener('click', () => $('#ovEdit').hidden = true);
 $('#fEdit').addEventListener('submit', async e => {
   e.preventDefault();
-  const data = { name: $('#eName').value.trim(), seats: Math.max(1, parseInt($('#eSeats').value,10)||1), phone: $('#ePhone').value.trim(), side: $('#eSide').value, cat: $('#eCat').value.trim(), table: $('#eTable').value };
+  const data = { name: $('#eName').value.trim(), seats: Math.max(1, parseInt($('#eSeats').value,10)||1), phone: $('#ePhone').value.trim(), side: $('#eSide').value, cat: $('#eCat').value.trim(), table: $('#eTable').value, ...((families.find(x => x.id === editId) || {}).table === $('#eTable').value ? {} : {alloc: null}) };
   const ad = $('#eAd').value, ki = $('#eKi').value;
   if (ad !== '' || ki !== ''){ data.adults = Math.max(0, parseInt(ad,10)||0); data.kids = Math.max(0, parseInt(ki,10)||0); if (data.adults + data.kids > 0) data.seats = data.adults + data.kids; }
   if (!data.name) return;
@@ -772,8 +782,8 @@ function planFromWorkbook(wb){
     const hdr = g[hr].map(c => ucw(c).toUpperCase());
     const ec = hdr.findIndex(h => /^ENFANTS?$/.test(h)), bc = hdr.findIndex(h => /^B[EÉ]B[EÉ]S?$/.test(h)), nc = ac - 1;
     const seat = {};
-    g.forEach((r, i) => r.forEach((c, j) => { const m = ucw(c).match(/^TABLE\s*(\d+)$/i); if (!m) return; const no = +m[1];
-      for (let k = i + 1; k < g.length; k++){ const nm = ucw(g[k][j]); if (!nm || /^TABLE\s*\d+$/i.test(nm)) break;
+    g.forEach((r, i) => r.forEach((c, j) => { const m = ucw(c).match(/^TABLE\W*(\d+)\W*$/i); if (!m) return; const no = +m[1];
+      for (let k = i + 1; k < g.length; k++){ const nm = ucw(g[k][j]); if (!nm || /^TABLE\W*\d+\W*$/i.test(nm)) break;
         const key = nkey(nm); seat[key] = seat[key] || {}; seat[key][no] = (seat[key][no] || 0) + num(g[k][j+1]) + num(g[k][j+2]); } }));
     const seen = {};
     for (let i = hr + 1; i < g.length; i++){ const r = g[i]; if (typeof r[nc] === 'number') continue; const nm = ucw(r[nc]);
@@ -782,7 +792,7 @@ function planFromWorkbook(wb){
       const key = nkey(nm); if (seen[key]) continue; seen[key] = 1;
       const s = seat[key] || {}; const tl = Object.entries(s).sort((x, y) => y[1] - x[1] || x[0] - y[0]);
       fams.push({ name: nm, cat, adults: a, kids: e + b, bebes: b, seats: a + e + b, tableNo: tl.length ? +tl[0][0] : 0,
-        tnote: tl.length > 1 ? tl.map(([t, c]) => `table ${t} : ${c}`).join(', ') : '' });
+        tnote: tl.length > 1 ? tl.map(([t, c]) => `table ${t} : ${c}`).join(', ') : '', split: tl.length > 1 ? Object.fromEntries(tl) : null });
     }
   });
   return { tnames, fams };
@@ -847,7 +857,7 @@ async function runPlanImport(P){
   }
   for (const x of P.fams){
     const side = /njara/i.test(x.cat) && !/tsidy/i.test(x.cat) ? 'njara' : /tsidy/i.test(x.cat) && !/njara/i.test(x.cat) ? 'tsidy' : '';
-    const data = { name: x.name, cat: x.cat, side, adults: x.adults, kids: x.kids, bebes: x.bebes, seats: x.seats, table: (x.tableNo && tid[x.tableNo]) || '', tnote: x.tnote };
+    const data = { name: x.name, cat: x.cat, side, adults: x.adults, kids: x.kids, bebes: x.bebes, seats: x.seats, table: (x.tableNo && tid[x.tableNo]) || '', tnote: x.tnote, alloc: x.split ? Object.fromEntries(Object.entries(x.split).filter(([n]) => tid[n]).map(([n, c]) => [tid[n], c])) : null };
     const ex = families.find(f => norm(f.name) === norm(x.name) && (f.cat || '') === x.cat);
     if (ex){ await fdoc(ex.id).update(data); upd++; }
     else { await db.collection('families').add({ ...data, phone: '', status: 'attente', coming: null, sent: false, created: Date.now() }); added++; }
@@ -879,7 +889,7 @@ $('#iGo').addEventListener('click', async () => {
 function renderSalle(){
   const T = tables.slice().sort((a,b)=>(a.order??999)-(b.order??999) || a.name.localeCompare(b.name));
   const W = 340, H = 280, cx = 170, cy = 132, R = 46, RC = 68, RL = 84;
-  const box = t => { const seats = []; families.filter(f => f.table===t.id && f.status!=='non').forEach(f => { const n = heads(f); for (let i=0;i<n;i++) seats.push({f, lab: n>1 ? `${f.name} ${i+1}` : f.name}); });
+  const box = t => { const seats = []; atTable(t.id).forEach(([f, n]) => { const off = tables.filter(x => x.id !== t.id && (x.order??999) < (t.order??999)).reduce((a, x) => a + atT(f, x.id), 0), many = heads(f) > 1; for (let i=0;i<n;i++) seats.push({f, lab: many ? `${f.name} ${off+i+1}` : f.name}); });
     const n = Math.max(t.capacity||10, seats.length); let g = '';
     for (let i=0;i<n;i++){ const a = -Math.PI/2 + i*2*Math.PI/n, x = cx+RC*Math.cos(a), y = cy+RC*Math.sin(a), s = seats[i];
       const col = !s ? '#fff' : s.f.status==='oui' ? '#4f6b3a' : '#b8875a';
@@ -903,12 +913,12 @@ function renderTables(){
   if (!tables.length){ $('#tGrid').innerHTML = '<div class="empty"><h3>Aucune table</h3>Créez vos tables avec leur nom et leur nombre de places, puis ajoutez-y des familles ou utilisez le placement automatique.</div>'; return; }
   const og = l => l.map(f=>`<option value="${esc(f.id)}">${esc(f.name)} (${heads(f)})</option>`).join('');
   const unOpts = '<option value="">Ajouter une famille…</option>' + allCats().concat(['']).map(c => { const l = un.filter(f => (f.cat||'')===c); return l.length ? `<optgroup label="${esc(c||'Sans catégorie')}">${og(l)}</optgroup>` : ''; }).join('');
-  $('#tGrid').innerHTML = tables.map(t => { const fs = active.filter(f => f.table === t.id); const n = fs.reduce((a,f)=>a+heads(f),0); const cap = t.capacity||10; return `
+  $('#tGrid').innerHTML = tables.map(t => { const fs = atTable(t.id); const n = fs.reduce((a,[,k])=>a+k,0); const cap = t.capacity||10; return `
   <article class="tcard" data-id="${esc(t.id)}">
     <div class="row"><input class="tname" value="${esc(t.name)}" data-act="tname" aria-label="Nom de la table"><button class="a-btn sm sec" type="button" data-act="tren">Modifier</button><input class="tcap" type="number" min="1" value="${cap}" data-act="tcap" aria-label="Places"><button class="x" type="button" data-act="tdel" title="Supprimer la table" aria-label="Supprimer la table">✕</button></div>
     <div class="meta"><span>${n} / ${cap} personnes</span></div>
     <div class="bar${n>cap?' over':''}"><i style="width:${Math.min(100, n/cap*100)}%"></i></div>
-    <ul>${fs.map(f=>`<li><span>${esc(f.name)}</span><span>${heads(f)} <button class="x" type="button" data-act="unseat" data-f="${esc(f.id)}" aria-label="Retirer ${esc(f.name)}">✕</button></span></li>`).join('')}</ul>
+    <ul>${fs.map(([f,k])=>`<li><span>${esc(f.name)}${f.table!==t.id?' <small>(répartie)</small>':''}</span><span>${k} <button class="x" type="button" data-act="unseat" data-f="${esc(f.id)}" aria-label="Retirer ${esc(f.name)}">✕</button></span></li>`).join('')}</ul>
     ${un.length ? `<select data-act="seat" aria-label="Ajouter une famille à ${esc(t.name)}">${unOpts}</select>` : ''}
   </article>`; }).join('');
 }
@@ -922,27 +932,27 @@ $('#tGrid').addEventListener('change', e => {
   const el = e.target.closest('[data-act]'); if (!el) return; const id = el.closest('.tcard').dataset.id;
   if (el.dataset.act==='tname' && el.value.trim()) save(tdoc(id), {name: el.value.trim()});
   if (el.dataset.act==='tcap') save(tdoc(id), {capacity: Math.max(1, parseInt(el.value,10)||1)});
-  if (el.dataset.act==='seat' && el.value) save(fdoc(el.value), {table: id});
+  if (el.dataset.act==='seat' && el.value) save(fdoc(el.value), {table: id, alloc: null});
 });
 $('#tGrid').addEventListener('click', async e => {
   const el = e.target.closest('[data-act]'); if (!el) return; const id = el.closest('.tcard').dataset.id;
-  if (el.dataset.act==='unseat') save(fdoc(el.dataset.f), {table:''});
+  if (el.dataset.act==='unseat'){ const f = families.find(x => x.id===el.dataset.f); if (f && f.table!==id && f.alloc){ const a = {...f.alloc}; delete a[id]; save(fdoc(f.id), {alloc: a}); } else save(fdoc(el.dataset.f), {table:'', alloc: null}); }
   if (el.dataset.act==='tren'){ const inp = el.closest('.tcard').querySelector('.tname'); const t = tables.find(x => x.id === id); const v = prompt('Nouveau nom de la table', t ? t.name : inp.value); if (v && v.trim()){ inp.value = v.trim(); save(tdoc(id), {name: v.trim()}); } }
   if (el.dataset.act==='tdel'){
     if (el.dataset.armed !== '1'){ el.dataset.armed = '1'; el.textContent = 'Supprimer ?'; return; }
-    for (const f of families.filter(f => f.table === id)) await save(fdoc(f.id), {table:''});
+    for (const f of families.filter(f => f.table === id)) await save(fdoc(f.id), {table:'', alloc: null});
     try { await tdoc(id).delete(); } catch(err){ toast('Suppression refusée'); }
   }
 });
 $('#tAuto').addEventListener('click', async () => {
   if (!tables.length) return toast('Créez d’abord vos tables');
-  const load = Object.fromEntries(tables.map(t => [t.id, families.filter(f => f.status!=='non' && f.table===t.id).reduce((a,f)=>a+heads(f),0)]));
+  const load = Object.fromEntries(tables.map(t => [t.id, atTable(t.id).reduce((a,[,k])=>a+k,0)]));
   const un = families.filter(f => f.status!=='non' && (!f.table || !(f.table in load))).sort((a,b)=>heads(b)-heads(a));
   let placed = 0, left = 0;
   for (const f of un){
     const t = tables.filter(t => (t.capacity||10) - load[t.id] >= heads(f)).sort((a,b)=>((a.capacity||10)-load[a.id])-((b.capacity||10)-load[b.id]))[0];
     if (!t){ left++; continue; }
-    load[t.id] += heads(f); await save(fdoc(f.id), {table:t.id}); placed++;
+    load[t.id] += heads(f); await save(fdoc(f.id), {table:t.id, alloc: null}); placed++;
   }
   toast(`${placed} famille${placed>1?'s':''} placée${placed>1?'s':''}` + (left ? `, ${left} sans place libre : ajoutez une table` : ''));
 });
@@ -953,7 +963,7 @@ $('#aExport').addEventListener('click', async () => {
   const tname = id => (tables.find(t=>t.id===id)||{}).name || '';
   const lab = {attente:'En attente', oui:'Vient', non:'Ne vient pas'};
   const s1 = families.map(f => ({ 'Catégorie':f.cat||'', 'Famille':f.name, 'Adultes':f.adults ?? '', 'Enfants':f.kids ?? '', 'Places invitées':f.seats,'Téléphone':f.phone||'', 'Invitation envoyée':f.sent?'Oui':'Non', 'Réponse':lab[f.status||'attente'], 'Personnes prévues':heads(f), 'Table':tname(f.table) }));
-  const s2 = tables.map(t => { const fs = families.filter(f=>f.table===t.id && f.status!=='non'); return { 'Table':t.name, 'Places':t.capacity||10, 'Personnes':fs.reduce((a,f)=>a+heads(f),0), 'Familles':fs.map(f=>`${f.name} (${heads(f)})`).join(', ') }; });
+  const s2 = tables.map(t => { const fs = atTable(t.id); return { 'Table':t.name, 'Places':t.capacity||10, 'Personnes':fs.reduce((a,[,k])=>a+k,0), 'Familles':fs.map(([f,k])=>`${f.name} (${k})`).join(', ') }; });
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(s1), 'Invités');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(s2.length ? s2 : [{Table:'',Places:'',Personnes:'',Familles:''}]), 'Tables');
