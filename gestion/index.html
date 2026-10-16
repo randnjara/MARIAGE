@@ -338,6 +338,14 @@ html.mode-admin #wrap{display:none}
 .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
 .stat b{display:block;font:600 40px/1 var(--serif);color:var(--espresso);font-variant-numeric:lining-nums tabular-nums}
 .stat span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--caramel)}
+.room{background:repeating-linear-gradient(90deg,rgba(150,110,70,.06) 0 2px,transparent 2px 120px),repeating-linear-gradient(0deg,rgba(150,110,70,.05) 0 1px,transparent 1px 28px),#f7eedf;border:2px solid #c9a87c;border-radius:18px;padding:18px;position:relative}
+.stage{margin:0 auto 10px;width:60%;text-align:center;padding:14px;border-radius:10px;background:#6b4a2f;color:#fff;font:600 16px var(--serif);letter-spacing:.04em}
+.floor{margin:0 auto 14px;width:40%;text-align:center;padding:22px;border:2px dashed #c9a87c;border-radius:12px;color:#8e6137;font:italic 15px var(--serif)}
+.stabs{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:4px}
+.stab{background:transparent}
+.door{margin:10px auto 0;width:140px;text-align:center;padding:6px;border-top:4px solid #8e6137;color:#8e6137;font:500 13px var(--sans);letter-spacing:.1em;text-transform:uppercase}
+.lg{display:inline-flex;align-items:center;gap:6px;font:14px var(--sans);color:var(--espresso)}.lg i{width:14px;height:14px;border-radius:50%;display:inline-block}
+@media print{body *{visibility:hidden}#salle,#salle *{visibility:visible}#salle{position:absolute;left:0;top:0;width:100%}.stabs{grid-template-columns:repeat(4,1fr)}.stab{break-inside:avoid}}
 .tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:18px}
 .tabs button{font:500 15px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;background:none;border:0;border-bottom:3px solid transparent;padding:14px 12px;color:var(--caramel);cursor:pointer}
 .tabs button[aria-selected="true"]{color:var(--espresso);border-bottom-color:var(--brown)}
@@ -405,7 +413,7 @@ html.mode-admin #wrap{display:none}
   <section class="stats" id="stats"></section>
   <section class="side" id="lastResp" hidden style="margin-bottom:18px"></section>
   <section class="sides" id="sides"></section>
-  <nav class="tabs" role="tablist"><button role="tab" aria-selected="true" data-tab="fam" type="button">Familles</button><button role="tab" aria-selected="false" data-tab="tab" type="button">Plan de tables</button></nav>
+  <nav class="tabs" role="tablist"><button role="tab" aria-selected="true" data-tab="fam" type="button">Familles</button><button role="tab" aria-selected="false" data-tab="tab" type="button">Plan de tables</button><button role="tab" aria-selected="false" data-tab="salle" type="button">Plan de salle</button></nav>
   <section id="tabFam">
     <div class="toolbar">
       <input type="search" id="q" placeholder="Rechercher une famille" aria-label="Rechercher une famille">
@@ -427,6 +435,13 @@ html.mode-admin #wrap{display:none}
       <button class="a-btn sec" type="button" id="tAuto">Placer automatiquement</button>
     </div>
     <div class="tables-wrap"><aside class="side" id="unassigned"></aside><div class="grid" id="tGrid"></div></div>
+  </section>
+  <section id="tabSalle" hidden>
+    <div class="toolbar" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+      <span class="lg"><i style="background:#4f6b3a"></i>Confirmé</span><span class="lg"><i style="background:#b8875a"></i>En attente</span><span class="lg"><i style="background:#fff;border:1px dashed #b8a58a"></i>Place libre</span>
+      <button class="a-btn sec" type="button" id="sPrint" style="margin-left:auto">Imprimer le plan</button>
+    </div>
+    <div id="salle"></div>
   </section>
 </main>
 
@@ -655,7 +670,7 @@ function render(){
   $('#sides').innerHTML = cl.map(k => { const l = families.filter(f => (f.cat||'')===k);
     const t = l.reduce((a,f)=>{ a.seats+=f.seats||0; if(f.status==='oui') a.oui+=f.coming??f.seats; else if(f.status!=='non') a.wait++; return a; }, {seats:0,oui:0,wait:0});
     return `<button type="button" class="sidecard" data-cat="${esc(k||'__none')}" aria-pressed="${fct===(k||'__none')}"><b>${esc(k||'Sans catégorie')}</b>${l.length} famille${l.length>1?'s':''} · ${t.seats} place${t.seats>1?'s':''} · ${t.oui} confirmé${t.oui>1?'s':''} · ${t.wait} sans réponse</button>`; }).join('');
-  renderFamilies(); renderTables();
+  renderFamilies(); renderTables(); renderSalle();
 }
 $('#sides').addEventListener('click', e => { const b = e.target.closest('[data-cat]'); if (!b) return; const v = b.dataset.cat; renderFamilies(); $('#fCat').value = $('#fCat').value===v ? '' : v; render(); });
 const CATS = ['FAMILLE TSIDY DADA','FAMILLE TSIDY NENY','FAMILLE NJARA','AMIE NJARA','MPIASA NJARA TSIDY','AMI TSIDY','BASKET'];
@@ -696,7 +711,7 @@ $('#famList').addEventListener('change', e => {
 $('#q').addEventListener('input', renderFamilies); $('#fStatus').addEventListener('change', renderFamilies); $('#fCat').addEventListener('change', render); $('#fSide').addEventListener('change', render);
 document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => {
   tab = b.dataset.tab; document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-selected', x===b));
-  $('#tabFam').hidden = tab!=='fam'; $('#tabTab').hidden = tab!=='tab';
+  $('#tabFam').hidden = tab!=='fam'; $('#tabTab').hidden = tab!=='tab'; $('#tabSalle').hidden = tab!=='salle';
 }));
 $('#aPreview').addEventListener('click', () => startInvite(families[0] ? {n:families[0].name, s:families[0].seats} : {n:'Famille Rakoto', s:4}, true));
 
@@ -856,6 +871,26 @@ $('#iGo').addEventListener('click', async () => {
 });
 
 /* tables */
+function renderSalle(){
+  const T = tables.slice().sort((a,b)=>(a.order??999)-(b.order??999) || a.name.localeCompare(b.name));
+  const W = 340, H = 280, cx = 170, cy = 132, R = 46, RC = 68, RL = 84;
+  const box = t => { const seats = []; families.filter(f => f.table===t.id && f.status!=='non').forEach(f => { const n = heads(f); for (let i=0;i<n;i++) seats.push({f, lab: n>1 ? `${f.name} ${i+1}` : f.name}); });
+    const n = Math.max(t.capacity||10, seats.length); let g = '';
+    for (let i=0;i<n;i++){ const a = -Math.PI/2 + i*2*Math.PI/n, x = cx+RC*Math.cos(a), y = cy+RC*Math.sin(a), s = seats[i];
+      const col = !s ? '#fff' : s.f.status==='oui' ? '#4f6b3a' : '#b8875a';
+      g += `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${(a*180/Math.PI+90).toFixed(1)})"><rect x="-9" y="-6" width="18" height="15" rx="4" fill="${col}" stroke="${s?'#4a2e18':'#b8a58a'}" ${s?'':'stroke-dasharray="3 2"'}/><rect x="-10" y="-11" width="20" height="5" rx="2.5" fill="${s?'#6b4a2f':'#d9cbb5'}"/><title>${s?esc(s.f.name+(s.f.cat?' · '+s.f.cat:'')):'Place libre'}</title></g>`;
+      if (s){ const lx = cx+RL*Math.cos(a), ly = cy+RL*Math.sin(a), c = Math.cos(a), an = Math.abs(c)<.25 ? 'middle' : c>0 ? 'start' : 'end', dy = Math.abs(c)<.25 ? (Math.sin(a)<0 ? -4 : 11) : 4;
+        const lab = s.lab.length>16 ? s.lab.slice(0,15)+'…' : s.lab;
+        g += `<text x="${lx.toFixed(1)}" y="${(ly+dy).toFixed(1)}" text-anchor="${an}" font-size="10.5" fill="#3f2614">${esc(lab)}</text>`; } }
+    const m = (t.name||'').match(/^(\d+)\.?\s*(.*)$/), num = m ? m[1] : '', nm = m ? m[2] : t.name;
+    return `<div class="stab"><svg viewBox="0 0 ${W} ${H}" width="100%"><ellipse cx="${cx+3}" cy="${cy+5}" rx="${R+2}" ry="${R+2}" fill="rgba(60,35,15,.18)"/><circle cx="${cx}" cy="${cy}" r="${R}" fill="url(#cloth)" stroke="#a37a4e" stroke-width="2"/><circle cx="${cx}" cy="${cy}" r="${R-6}" fill="none" stroke="#d8c19d" stroke-dasharray="2 3"/>
+      <g transform="translate(${cx} ${cy-30})">${[[-7,0,'#8a5a34'],[7,0,'#efe0c4'],[0,-5,'#b98a5e']].map(([dx,dy,c])=>`<circle cx="${dx}" cy="${dy}" r="5" fill="${c}" stroke="#6b4a2f" stroke-width=".6"/>`).join('')}<circle cx="0" cy="-1" r="2" fill="#fff"/></g>
+      <text x="${cx}" y="${cy+4}" text-anchor="middle" font-size="22" font-weight="700" fill="#52331c">${esc(num)}</text><text x="${cx}" y="${cy+20}" text-anchor="middle" font-size="11" fill="#52331c">${esc(nm.length>14?nm.slice(0,13)+'…':nm)}</text>${g}
+      <text x="${cx}" y="${H-8}" text-anchor="middle" font-size="12" fill="#8e6137">${seats.length} / ${t.capacity||10} personnes</text></svg></div>`; };
+  $('#salle').innerHTML = !T.length ? '<div class="empty"><h3>Aucune table</h3>Importez votre classeur ou créez des tables dans « Plan de tables ».</div>'
+    : `<svg width="0" height="0" style="position:absolute"><defs><radialGradient id="cloth" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#fffaf1"/><stop offset="1" stop-color="#ead8ba"/></radialGradient></defs></svg><div class="room"><div class="stage">Table d’honneur · Tsidy &amp; Njara · Mihaja Kaël</div><div class="floor">Piste de danse</div><div class="stabs">${T.map(box).join('')}</div><div class="door">Entrée</div></div>`;
+}
+$('#sPrint').addEventListener('click', () => { document.querySelectorAll('.tabs button').forEach(b => { if (b.dataset.tab==='salle') b.click(); }); window.print(); });
 function renderTables(){
   const active = families.filter(f => f.status !== 'non');
   const un = active.filter(f => !f.table || !tables.some(t => t.id === f.table));
