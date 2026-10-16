@@ -166,7 +166,10 @@ body{margin:0;background:var(--espresso);overflow:hidden;font-family:var(--serif
 #s4 .steppers .stepper output{font-size:84px;min-width:90px}
 #s4 .btn-main,#s4 .btn-ghost{font-size:32px;padding:26px 50px;min-width:600px}
 #s4 .rsvp-note{font-size:36px;max-width:700px}
-#s4 .contacts{margin-top:22px!important;gap:60px}
+#s4 .contacts{margin-top:18px!important;gap:60px}
+.rsvp-pre{font:italic 34px/1.25 var(--serif);color:var(--espresso);max-width:700px;margin:-2px 0 2px}
+.maps{display:flex;gap:18px;margin-top:22px;justify-content:center}
+.maps a{display:inline-flex;align-items:center;gap:8px;text-decoration:none;font:500 26px/1 var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--brown);border:2px solid rgba(107,74,47,.45);border-radius:60px;padding:16px 26px;background:rgba(251,246,238,.7)}
 #s4 .contacts .script{font-size:60px!important}
 #s4 .contacts .num{font-size:32px}
 .steppers{display:flex;flex-direction:column;gap:18px;align-items:center}
@@ -232,7 +235,7 @@ body{margin:0;background:var(--espresso);overflow:hidden;font-family:var(--serif
 
   <!-- 0. film -->
   <section class="scene" id="s0">
-    <video id="film" playsinline webkit-playsinline preload="metadata" poster="../film.jpg?v=11"><source src="../film.mp4?v=11" type="video/mp4"></video>
+    <video id="film" playsinline webkit-playsinline preload="metadata" poster="../film.jpg?v=12"><source src="../film.mp4?v=12" type="video/mp4"></video>
     <button type="button" id="playBtn" hidden><span class="pb-i">▶</span><span class="pb-t">Touchez pour ouvrir<br>l’invitation</span></button>
     <button type="button" id="skipBtn">Passer ›</button>
     <button type="button" id="sndBtn" hidden>🔊&nbsp; Activer le son</button>
@@ -273,6 +276,7 @@ body{margin:0;background:var(--espresso);overflow:hidden;font-family:var(--serif
           <div class="srow"><span class="slab">Enfants</span><div class="stepper"><button type="button" id="kMinus" aria-label="Un enfant de moins">−</button><output id="kCnt">0</output><button type="button" id="kPlus" aria-label="Un enfant de plus">+</button></div></div>
           <div class="tot" id="tot" hidden></div>
         </div>
+        <div class="rsvp-pre" id="rsvpPre">Votre réponse sera enregistrée. Vous pouvez encore la modifier jusqu’au 30 octobre 2026.</div>
         <a class="btn-main" id="yes" target="_blank" rel="noopener" href="#">Je confirme ma présence</a>
         <a class="btn-ghost" id="no" target="_blank" rel="noopener" href="#">Je ne pourrai pas venir</a>
         <div class="rsvp-note" id="rsvpNote" hidden></div>
@@ -280,6 +284,10 @@ body{margin:0;background:var(--espresso);overflow:hidden;font-family:var(--serif
       <div class="contacts rv" style="--d:1.4s;margin-top:50px">
         <a href="tel:+261342217497"><span class="script" style="font-size:72px">Tsidy</span><span class="num">034 22 174 97</span></a>
         <a href="tel:+261342754147"><span class="script" style="font-size:72px">Njara</span><span class="num">034 27 541 47</span></a>
+      </div>
+      <div class="maps rv" style="--d:1.6s">
+        <a href="https://www.google.com/maps/search/?api=1&amp;query=%C3%89glise+Christ+Roi+Manjakaray+Antananarivo" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z" fill="currentColor"/></svg>Map église</a>
+        <a href="https://www.google.com/maps/search/?api=1&amp;query=Espace+Fenitra+By+Pass+Antananarivo" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z" fill="currentColor"/></svg>Map Espace Fenitra</a>
       </div>
     </div>
   </section>
@@ -402,6 +410,7 @@ html.mode-admin #wrap{display:none}
     <div class="toolbar">
       <input type="search" id="q" placeholder="Rechercher une famille" aria-label="Rechercher une famille">
       <select id="fStatus" aria-label="Filtrer par réponse"><option value="">Toutes les réponses</option><option value="attente">En attente</option><option value="oui">Viennent</option><option value="non">Ne viennent pas</option><option value="nonenv">Invitation pas encore envoyée</option></select>
+      <select id="fCat" aria-label="Filtrer par catégorie"><option value="">Toutes les catégories</option></select>
       <select id="fSide" aria-label="Filtrer par côté"><option value="">Les deux familles</option><option value="njara">Famille Njara</option><option value="tsidy">Famille Tsidy</option><option value="none">À classer</option></select>
       <button class="a-btn sec" type="button" id="aImport">Importer Excel</button>
       <button class="a-btn sec" type="button" id="aClear" style="color:#9b2c2c;border-color:rgba(155,44,44,.45)">Supprimer toute la liste</button>
@@ -425,6 +434,9 @@ html.mode-admin #wrap{display:none}
   <h2 id="eTitle">Ajouter une famille</h2>
   <label class="fld">Nom affiché sur l'invitation<input id="eName" required placeholder="Famille Rakoto"></label>
   <label class="fld">Nombre de places<input id="eSeats" type="number" min="1" value="2" required></label>
+  <div style="display:flex;gap:10px"><label class="fld" style="flex:1">Adultes<input id="eAd" type="number" min="0" value=""></label><label class="fld" style="flex:1">Enfants<input id="eKi" type="number" min="0" value=""></label></div>
+  <label class="fld">Catégorie<input id="eCat" list="catList" placeholder="ex. FAMILLE NJARA"><datalist id="catList"></datalist></label>
+  <label class="fld">Table<select id="eTable"></select></label>
   <label class="fld">Côté<select id="eSide"><option value="">À classer</option><option value="njara">Famille Njara</option><option value="tsidy">Famille Tsidy</option></select></label>
   <label class="fld">Téléphone WhatsApp (facultatif)<input id="ePhone" inputmode="tel" placeholder="034 00 000 00"></label>
   <div class="acts" style="justify-content:space-between"><button type="button" class="a-btn sec" id="eDel" hidden>Supprimer</button><span class="acts"><button type="button" class="a-btn sec" id="eCancel">Annuler</button><button class="a-btn" type="submit">Enregistrer</button></span></div>
@@ -548,21 +560,22 @@ $('#kMinus').addEventListener('click', e => { e.stopPropagation(); kids--; updat
 $('#kPlus').addEventListener('click', e => { e.stopPropagation(); const max = guest ? guest.s : 20; if (count + kids >= max && count > 1) count--; kids++; updateRsvp(); });
 function note(t){ const n = $('#rsvpNote'); n.hidden = false; n.textContent = t; }
 const DEADLINE = Date.UTC(2026, 9, 30, 21, 0, 0); /* 30 octobre 2026 à minuit, heure de Madagascar */
-const MODIF = ' Vous pouvez encore la modifier jusqu’au 30 octobre 2026 : seule votre dernière réponse compte.';
+const MODIF = ' Vous pouvez encore la modifier jusqu’au 30 octobre 2026, seule votre dernière réponse compte.';
 const rkey = () => 'rsvp_' + (guest ? (guest.id || guest.n) : 'general');
 const rget = () => { try { return JSON.parse(localStorage.getItem(rkey()) || 'null'); } catch(e){ return null; } };
 const rset = v => { try { localStorage.setItem(rkey(), JSON.stringify(v)); } catch(e){} };
 const ptxt = r => { const a = r.a ?? r.p, e = r.e || 0; return `${a} adulte${a > 1 ? 's' : ''}` + (e ? ` et ${e} enfant${e > 1 ? 's' : ''}` : ''); };
-const rtxt = r => r.r === 'Vient' ? `Votre réponse est enregistrée : vous venez à ${ptxt(r)}.` : 'Votre réponse est enregistrée : vous ne pourrez pas venir.';
+const rtxt = r => r.r === 'Vient' ? `Votre réponse est enregistrée, vous venez à ${ptxt(r)}.` : 'Votre réponse est enregistrée, vous ne pourrez pas venir.';
 window.__rsvpInit = () => {
   if (window.__preview || !window.__saveRsvp) return;
   const prev = rget(), closed = Date.now() >= DEADLINE;
   ['#stepper','#yes','#no','#howMany'].forEach(q => { $(q).style.display = closed ? 'none' : ''; });
   if (closed){ note((prev ? rtxt(prev) + ' ' : '') + 'Les réponses sont closes depuis le 30 octobre 2026. Pour toute question, appelez Tsidy ou Njara.'); return; }
-  if (prev){ if (prev.r === 'Vient' && prev.p) { count = prev.a ?? prev.p; kids = prev.e || 0; updateRsvp(); } note(rtxt(prev) + MODIF); }
+  if (prev){ if (prev.r === 'Vient' && prev.p) { count = prev.a ?? prev.p; kids = prev.e || 0; updateRsvp(); } note(rtxt(prev) + MODIF); $('#rsvpPre').hidden = true; }
 };
 ['yes','no'].forEach(id => $('#'+id).addEventListener('click', e => {
   const MS = ' Votre message est copié : collez-le dans Messenger et envoyez-le.';
+  setTimeout(() => { const pre = $('#rsvpPre'); if (pre) pre.hidden = true; }, 0);
   try { navigator.clipboard && navigator.clipboard.writeText($('#'+id).dataset.msg || ''); } catch(err){}
   if (!window.__saveRsvp){ note('Merci !' + MS); return; }
   if (window.__preview){ e.preventDefault(); note('Aperçu : la réponse n’est pas enregistrée.'); return; }
@@ -570,7 +583,7 @@ window.__rsvpInit = () => {
   const name = guest ? guest.n : 'Lien général';
   const r = { r: id==='yes' ? 'Vient' : 'Ne vient pas', a: id==='yes' ? count : 0, e: id==='yes' ? kids : 0 }; r.p = r.a + r.e;
   const prev = rget();
-  const thanks = (id==='yes' ? 'Merci ! ' : 'Merci de nous avoir prévenus. ') + rtxt(r) + MS;
+  const thanks = rtxt(r) + MODIF;
   if (window.__sending) return;
   if (prev && prev.r === r.r && prev.p === r.p && (prev.e || 0) === r.e){ note(thanks); return; }
   window.__sending = true; note('Envoi de votre réponse…');
@@ -593,14 +606,14 @@ function resetInvite(){
     if (!on && was) v.pause(); was = on; }).observe(sc, { attributes: true, attributeFilter: ['class'] });
 })();
 function startInvite(g, preview){
-  guest = g && g.n ? { n: String(g.n), s: Math.max(1, parseInt(g.s,10) || 1), id: g.id ? String(g.id) : '' } : null;
+  guest = g && g.n ? { n: String(g.n), s: Math.max(1, parseInt(g.s,10) || 1), id: g.id ? String(g.id) : '', a: Math.max(0, parseInt(g.a,10) || 0), e: Math.max(0, parseInt(g.e,10) || 0) } : null;
   document.documentElement.classList.remove('mode-admin'); $('#admin').hidden = true;
   $('#envAddr').hidden = !guest; $('#envName').textContent = guest ? guest.n : '';
   $('#seatsN').hidden = $('#seatsW').hidden = !guest;
   $('#fourLead').textContent = guest ? 'Nous sommes heureux d’inviter' : 'Nous sommes heureux de vous inviter';
   if (guest){ $('#seatsN').textContent = guest.s; $('#seatsW').textContent = guest.s > 1 ? 'personnes' : 'personne'; }
   $('#howMany').textContent = guest && guest.s > 1 ? `Combien serez-vous ? (${guest.s} places)` : 'Combien serez-vous ?';
-  count = guest ? guest.s : 1; kids = 0; updateRsvp();
+  count = guest ? (guest.a || guest.s) : 1; kids = guest ? Math.min(guest.e || 0, guest.s - count) : 0; updateRsvp();
   $('#back').hidden = !preview; window.__preview = !!preview;
   resetInvite(); fit(); window.__rsvpInit && window.__rsvpInit();
 }
@@ -617,7 +630,7 @@ let db = null, families = [], tables = [], adminStarted = false, tab = 'fam', ed
 const norm = s => String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
 const waPhone = p => { let d = String(p||'').replace(/\D/g,''); if (!d) return ''; if (d.startsWith('00')) d = d.slice(2); if (d.length===10 && d[0]==='0') d = '261'+d.slice(1); else if (d.length===9) d = '261'+d; return d; };
 const heads = f => f.status==='non' ? 0 : f.status==='oui' ? (f.coming ?? f.seats) : f.seats;
-const invLink = f => GUEST_URL + '?i=' + enc({n:f.name, s:f.seats, id:f.id});
+const invLink = f => GUEST_URL + '?i=' + enc({n:f.name, s:f.seats, id:f.id, ...(f.adults != null ? {a:f.adults, e:f.kids||0} : {})});
 const invText = f => `Bonjour ${f.name},\nNous avons la joie de vous inviter à nos Noces d'Étain (10 ans de mariage) et au baptême de notre fils Andriatsididika Mihaja Kael, le samedi 7 novembre 2026 à 8h.\nVotre invitation : ${invLink(f)}\nMerci de confirmer avant le 30 octobre.\nTsidy & Njara`;
 
 async function startAdmin(){
@@ -646,8 +659,11 @@ function render(){
 }
 $('#sides').addEventListener('click', e => { const b = e.target.closest('[data-side]'); if (!b) return; $('#fSide').value = $('#fSide').value===b.dataset.side ? '' : b.dataset.side; render(); });
 function renderFamilies(){
-  const q = norm($('#q').value), st = $('#fStatus').value, sd = $('#fSide').value;
-  const list = families.filter(f => (!q || norm(f.name).includes(q)) && (!sd || (f.side||'none')===sd) && (!st || (st==='nonenv' ? !f.sent : (f.status||'attente')===st)));
+  const q = norm($('#q').value), st = $('#fStatus').value, sd = $('#fSide').value, ct = $('#fCat').value;
+  const cats = [...new Set(families.map(f => f.cat).filter(Boolean))].sort();
+  $('#fCat').innerHTML = '<option value="">Toutes les catégories</option>' + cats.map(c => `<option value="${esc(c)}"${c===ct?' selected':''}>${esc(c)} (${families.filter(f=>f.cat===c).length})</option>`).join('');
+  $('#fCat').hidden = !cats.length;
+  const list = families.filter(f => (!q || norm(f.name).includes(q)) && (!ct || f.cat===ct) && (!sd || (f.side||'none')===sd) && (!st || (st==='nonenv' ? !f.sent : (f.status||'attente')===st)));
   if (!families.length){ $('#famList').innerHTML = '<div class="empty"><h3>Aucune famille pour l’instant</h3>Importez votre fichier Excel (une colonne pour le nom, une pour le nombre d’invités) ou ajoutez une famille à la main.<p><button class="a-btn" type="button" id="seedBtn">Charger mes 50 familles</button></p></div>'; return; }
   if (!list.length){ $('#famList').innerHTML = '<div class="empty">Aucune famille ne correspond à ce filtre.</div>'; return; }
   const topts = sel => `<option value="">Sans table</option>` + tables.map(t=>`<option value="${esc(t.id)}"${t.id===sel?' selected':''}>${esc(t.name)}</option>`).join('');
@@ -655,7 +671,7 @@ function renderFamilies(){
   <article class="fam" data-id="${esc(f.id)}">
     <div class="fam-h"><b>${esc(f.name)}</b><span class="pill">${f.seats} place${f.seats>1?'s':''}</span></div>
     <div class="side" role="group" aria-label="Côté"><span>Côté</span>${[['njara','Njara'],['tsidy','Tsidy']].map(([v,l])=>`<button type="button" data-act="side" data-v="${v}" aria-pressed="${f.side===v}">${l}</button>`).join('')}</div>
-    <div class="meta">${f.adults != null ? `<span>${f.adults} adulte${f.adults>1?'s':''}${f.kids ? ` · ${f.kids} enfant${f.kids>1?'s':''}` : ''}</span>` : ''}<span>${f.sent ? 'Invitation envoyée' : 'Pas encore envoyée'}</span>${f.phone ? `<span>${esc(f.phone)}</span>` : ''}<label>Table <select data-act="table">${topts(f.table)}</select></label></div>
+    <div class="meta">${f.cat ? `<span>${esc(f.cat)}</span>` : ''}${f.adults != null ? `<span>${f.adults} adulte${f.adults>1?'s':''}${f.kids ? ` · ${f.kids} enfant${f.kids>1?'s':''}` : ''}</span>` : ''}${f.tnote ? `<span>Réparti : ${esc(f.tnote)}</span>` : ''}<span>${f.sent ? 'Invitation envoyée' : 'Pas encore envoyée'}</span>${f.phone ? `<span>${esc(f.phone)}</span>` : ''}<label>Table <select data-act="table">${topts(f.table)}</select></label></div>
     <div class="seg" role="group" aria-label="Réponse">${[['attente','En attente'],['oui','Vient'],['non','Ne vient pas']].map(([v,l])=>`<button type="button" data-act="status" data-v="${v}" aria-pressed="${s===v}">${l}</button>`).join('')}</div>
     ${s==='oui' ? `<label class="coming">Personnes présentes <input type="number" min="1" max="${f.seats}" value="${f.coming ?? f.seats}" data-act="coming"></label>${f.adultes != null ? `<span class="coming">${f.adultes} adulte${f.adultes > 1 ? 's' : ''}, ${f.enfants || 0} enfant${(f.enfants || 0) > 1 ? 's' : ''}</span>` : ''}` : ''}
     <div class="acts"><a class="a-btn sm wa" data-act="send" target="_blank" rel="noopener" href="${esc(waLink(ph, invText(f)))}">Envoyer sur WhatsApp</a><button class="a-btn sm sec" type="button" data-act="copy">Copier le lien</button><button class="a-btn sm sec" type="button" data-act="view">Voir</button><button class="a-btn sm sec" type="button" data-act="edit">Modifier</button></div>
@@ -668,7 +684,7 @@ $('#famList').addEventListener('click', async e => {
   if (act==='side') save(fdoc(f.id), {side: f.side===el.dataset.v ? '' : el.dataset.v});
   if (act==='send'){ if (!f.sent) save(fdoc(f.id), {sent:true}); }
   if (act==='copy'){ const link = invLink(f); try { await navigator.clipboard.writeText(link); toast('Lien copié pour ' + f.name); } catch(err){ toast(link); } }
-  if (act==='view') startInvite({n:f.name, s:f.seats}, true);
+  if (act==='view') startInvite({n:f.name, s:f.seats, ...(f.adults != null ? {a:f.adults, e:f.kids||0} : {})}, true);
   if (act==='edit') openEdit(f);
 });
 $('#famList').addEventListener('change', e => {
@@ -688,6 +704,9 @@ function openEdit(f){
   editId = f ? f.id : null; delArmed = false;
   $('#eTitle').textContent = f ? 'Modifier la famille' : 'Ajouter une famille';
   $('#eName').value = f ? f.name : ''; $('#eSeats').value = f ? f.seats : 2; $('#ePhone').value = f ? (f.phone||'') : ''; $('#eSide').value = f ? (f.side||'') : ($('#fSide').value==='none' ? '' : $('#fSide').value);
+  $('#eAd').value = f && f.adults != null ? f.adults : ''; $('#eKi').value = f && f.kids != null ? f.kids : ''; $('#eCat').value = f ? (f.cat||'') : '';
+  $('#catList').innerHTML = [...new Set(families.map(x => x.cat).filter(Boolean))].map(c => `<option value="${esc(c)}">`).join('');
+  $('#eTable').innerHTML = '<option value="">Sans table</option>' + tables.map(t => `<option value="${esc(t.id)}"${f && t.id===f.table?' selected':''}>${esc(t.name)}</option>`).join('');
   $('#eDel').hidden = !f; $('#eDel').textContent = 'Supprimer';
   $('#ovEdit').hidden = false; $('#eName').focus();
 }
@@ -695,7 +714,9 @@ $('#aAdd').addEventListener('click', () => db ? openEdit(null) : toast('Gestion 
 $('#eCancel').addEventListener('click', () => $('#ovEdit').hidden = true);
 $('#fEdit').addEventListener('submit', async e => {
   e.preventDefault();
-  const data = { name: $('#eName').value.trim(), seats: Math.max(1, parseInt($('#eSeats').value,10)||1), phone: $('#ePhone').value.trim(), side: $('#eSide').value };
+  const data = { name: $('#eName').value.trim(), seats: Math.max(1, parseInt($('#eSeats').value,10)||1), phone: $('#ePhone').value.trim(), side: $('#eSide').value, cat: $('#eCat').value.trim(), table: $('#eTable').value };
+  const ad = $('#eAd').value, ki = $('#eKi').value;
+  if (ad !== '' || ki !== ''){ data.adults = Math.max(0, parseInt(ad,10)||0); data.kids = Math.max(0, parseInt(ki,10)||0); if (data.adults + data.kids > 0) data.seats = data.adults + data.kids; }
   if (!data.name) return;
   try {
     if (editId) await fdoc(editId).update(data);
@@ -717,7 +738,40 @@ $('#eDel').addEventListener('click', async () => {
 });
 
 /* Excel import */
-let rows = [], header = [], impWb = null;
+let rows = [], header = [], impWb = null, impPlan = null;
+function planFromWorkbook(wb){
+  const ucw = s => String(s ?? '').replace(/\s+/g,' ').trim();
+  const nkey = s => norm(ucw(s));
+  const tSheet = wb.SheetNames.find(n => /nom.*table/i.test(n)); if (!tSheet) return null;
+  const grid = n => XLSX.utils.sheet_to_json(wb.Sheets[n], { header:1, defval:'', raw:true });
+  const num = v => { const x = parseFloat(String(v).replace(',', '.')); return isFinite(x) ? Math.round(x) : 0; };
+  const tnames = {};
+  grid(tSheet).forEach(r => { const m = ucw(r[0]).match(/^(\d+)\s*[.\-)]\s*(.+)$/); if (m) tnames[+m[1]] = ucw(r[0]); });
+  const fams = [];
+  wb.SheetNames.filter(n => n !== tSheet && !/r[ée]cap/i.test(n)).forEach(cat => {
+    const g = grid(cat);
+    let hr = -1, ac = -1;
+    for (let i = 0; i < g.length && hr < 0; i++){ const j = g[i].findIndex(c => /^adultes?$/i.test(ucw(c))); if (j > 0){ hr = i; ac = j; } }
+    if (hr < 0) return;
+    const hdr = g[hr].map(c => ucw(c).toUpperCase());
+    const ec = hdr.findIndex(h => /^ENFANTS?$/.test(h)), bc = hdr.findIndex(h => /^B[EÉ]B[EÉ]S?$/.test(h)), nc = ac - 1;
+    const seat = {};
+    g.forEach((r, i) => r.forEach((c, j) => { const m = ucw(c).match(/^TABLE\s*(\d+)$/i); if (!m) return; const no = +m[1];
+      for (let k = i + 1; k < g.length; k++){ const nm = ucw(g[k][j]); if (!nm || /^TABLE\s*\d+$/i.test(nm)) break;
+        const key = nkey(nm); seat[key] = seat[key] || {}; seat[key][no] = (seat[key][no] || 0) + num(g[k][j+1]) + num(g[k][j+2]); } }));
+    const seen = {};
+    for (let i = hr + 1; i < g.length; i++){ const r = g[i]; if (typeof r[nc] === 'number') continue; const nm = ucw(r[nc]);
+      if (!nm || /^(total|famille|ami|amie)$/i.test(nm)) continue;
+      const a = num(r[ac]), e = ec >= 0 ? num(r[ec]) : 0, b = bc >= 0 ? num(r[bc]) : 0; if (!(a + e + b)) continue;
+      const key = nkey(nm); if (seen[key]) continue; seen[key] = 1;
+      const s = seat[key] || {}; const tl = Object.entries(s).sort((x, y) => y[1] - x[1] || x[0] - y[0]);
+      fams.push({ name: nm, cat, adults: a, kids: e + b, bebes: b, seats: a + e + b, tableNo: tl.length ? +tl[0][0] : 0,
+        tnote: tl.length > 1 ? tl.map(([t, c]) => `table ${t} : ${c}`).join(', ') : '' });
+    }
+  });
+  return { tnames, fams };
+}
+
 function loadSheet(k){
   const name = impWb.SheetNames[k];
   const all = XLSX.utils.sheet_to_json(impWb.Sheets[name], { header:1, defval:'', raw:false }).filter(r => r.some(c => String(c).trim()));
@@ -740,7 +794,17 @@ $('#file').addEventListener('change', async e => {
   if (!window.XLSX){ toast('Le lecteur Excel n’a pas pu se charger'); return; }
   try {
     const wb = XLSX.read(await file.arrayBuffer(), { type:'array' });
-    impWb = wb;
+    impWb = wb; impPlan = planFromWorkbook(wb);
+    const plainFlds = ['#iSheet','#iSide','#iName','#iSeats','#iPhone'];
+    plainFlds.forEach(q => $(q).closest('label').style.display = impPlan ? 'none' : '');
+    if (impPlan){
+      const P = impPlan, cats = {}; P.fams.forEach(f => { const c = cats[f.cat] = cats[f.cat] || {n:0,p:0}; c.n++; c.p += f.seats; });
+      const tot = P.fams.reduce((a,f)=>a+f.seats,0), notab = P.fams.filter(f=>!f.tableNo).length;
+      $('#iInfo').innerHTML = `Classeur complet reconnu : <b>${Object.keys(P.tnames).length} tables</b> et <b>${P.fams.length} familles</b> (${tot} personnes) dans ${Object.keys(cats).length} catégories. Chaque famille est placée automatiquement à sa table.` + (notab ? ` ${notab} famille${notab>1?'s':''} sans numéro de table resteront « Sans table ».` : '') + ' Une famille déjà présente (même nom et même catégorie) est mise à jour.';
+      $('#iPrev').innerHTML = '<tr><th>Catégorie</th><th>Familles</th><th>Personnes</th></tr>' + Object.entries(cats).map(([c,v])=>`<tr><td>${esc(c)}</td><td>${v.n}</td><td>${v.p}</td></tr>`).join('');
+      $('#iGo').textContent = `Importer ${P.fams.length} familles et ${Object.keys(P.tnames).length} tables`;
+      $('#ovImp').hidden = false; return;
+    }
     $('#iSheet').innerHTML = wb.SheetNames.map((n,i)=>`<option value="${i}">${esc(n)}</option>`).join('');
     $('#iSheet').closest('label').style.display = wb.SheetNames.length < 2 ? 'none' : '';
     if (!loadSheet(0)) return;
@@ -757,7 +821,26 @@ function previewImport(){ const p = parsed(); $('#iPrev').innerHTML = '<tr><th>N
 ['#iName','#iSeats','#iPhone'].forEach(s => $(s).addEventListener('change', previewImport));
 $('#iSheet').addEventListener('change', () => loadSheet(+$('#iSheet').value));
 $('#iCancel').addEventListener('click', () => $('#ovImp').hidden = true);
+async function runPlanImport(P){
+  const tid = {}; let tn = 0, added = 0, upd = 0;
+  for (const [no, name] of Object.entries(P.tnames)){
+    const ex = tables.find(t => +t.order === +no) || tables.find(t => norm(t.name) === norm(name));
+    if (ex){ if (ex.name !== name || +ex.order !== +no) await tdoc(ex.id).update({ name, order: +no }); tid[no] = ex.id; }
+    else { const r = await db.collection('tables').add({ name, capacity: 10, order: +no }); tid[no] = r && r.id; }
+    $('#iGo').textContent = `Tables… ${++tn}/${Object.keys(P.tnames).length}`;
+  }
+  for (const x of P.fams){
+    const side = /njara/i.test(x.cat) && !/tsidy/i.test(x.cat) ? 'njara' : /tsidy/i.test(x.cat) && !/njara/i.test(x.cat) ? 'tsidy' : '';
+    const data = { name: x.name, cat: x.cat, side, adults: x.adults, kids: x.kids, bebes: x.bebes, seats: x.seats, table: (x.tableNo && tid[x.tableNo]) || '', tnote: x.tnote };
+    const ex = families.find(f => norm(f.name) === norm(x.name) && (f.cat || '') === x.cat);
+    if (ex){ await fdoc(ex.id).update(data); upd++; }
+    else { await db.collection('families').add({ ...data, phone: '', status: 'attente', coming: null, sent: false, created: Date.now() }); added++; }
+    $('#iGo').textContent = `Familles… ${added + upd}/${P.fams.length}`;
+  }
+  return `${tn} tables, ${added} famille${added>1?'s':''} ajoutée${added>1?'s':''}, ${upd} mise${upd>1?'s':''} à jour`;
+}
 $('#iGo').addEventListener('click', async () => {
+  if (impPlan){ $('#iGo').disabled = true; try { const m = await runPlanImport(impPlan); $('#ovImp').hidden = true; toast(m); } catch(err){ toast('Import interrompu : ' + (err.message||err.code)); } $('#iGo').disabled = false; return; }
   const p = parsed(), side = $('#iSide').value; $('#iGo').disabled = true; let added = 0, upd = 0;
   try {
     for (const x of p){
@@ -780,7 +863,7 @@ function renderTables(){
   const unOpts = '<option value="">Ajouter une famille…</option>' + un.map(f=>`<option value="${esc(f.id)}">${esc(f.name)} (${heads(f)})</option>`).join('');
   $('#tGrid').innerHTML = tables.map(t => { const fs = active.filter(f => f.table === t.id); const n = fs.reduce((a,f)=>a+heads(f),0); const cap = t.capacity||10; return `
   <article class="tcard" data-id="${esc(t.id)}">
-    <div class="row"><input class="tname" value="${esc(t.name)}" data-act="tname" aria-label="Nom de la table"><input class="tcap" type="number" min="1" value="${cap}" data-act="tcap" aria-label="Places"><button class="x" type="button" data-act="tdel" title="Supprimer la table" aria-label="Supprimer la table">✕</button></div>
+    <div class="row"><input class="tname" value="${esc(t.name)}" data-act="tname" aria-label="Nom de la table"><button class="a-btn sm sec" type="button" data-act="tren">Modifier</button><input class="tcap" type="number" min="1" value="${cap}" data-act="tcap" aria-label="Places"><button class="x" type="button" data-act="tdel" title="Supprimer la table" aria-label="Supprimer la table">✕</button></div>
     <div class="meta"><span>${n} / ${cap} personnes</span></div>
     <div class="bar${n>cap?' over':''}"><i style="width:${Math.min(100, n/cap*100)}%"></i></div>
     <ul>${fs.map(f=>`<li><span>${esc(f.name)}</span><span>${heads(f)} <button class="x" type="button" data-act="unseat" data-f="${esc(f.id)}" aria-label="Retirer ${esc(f.name)}">✕</button></span></li>`).join('')}</ul>
@@ -802,6 +885,7 @@ $('#tGrid').addEventListener('change', e => {
 $('#tGrid').addEventListener('click', async e => {
   const el = e.target.closest('[data-act]'); if (!el) return; const id = el.closest('.tcard').dataset.id;
   if (el.dataset.act==='unseat') save(fdoc(el.dataset.f), {table:''});
+  if (el.dataset.act==='tren'){ const inp = el.closest('.tcard').querySelector('.tname'); const t = tables.find(x => x.id === id); const v = prompt('Nouveau nom de la table', t ? t.name : inp.value); if (v && v.trim()){ inp.value = v.trim(); save(tdoc(id), {name: v.trim()}); } }
   if (el.dataset.act==='tdel'){
     if (el.dataset.armed !== '1'){ el.dataset.armed = '1'; el.textContent = 'Supprimer ?'; return; }
     for (const f of families.filter(f => f.table === id)) await save(fdoc(f.id), {table:''});
@@ -871,10 +955,14 @@ function watchResponses() {
       Promise.all(ops).catch(() => {});
     });
     all.filter(r => !r.familyId && !r.applied).forEach(r => updateDoc(r.ref, { applied: true }).catch(() => {}));
+    all.filter(r => r.familyId && latest[r.familyId] !== r).forEach(r => deleteDoc(r.ref).catch(() => {}));
+    const shown = all.filter(r => !r.familyId || latest[r.familyId] === r);
     const box = $('#lastResp'); box.hidden = !all.length;
     const ptx = r => r.reponse === 'Vient' ? 'Vient · ' + (r.adultes ?? r.personnes) + ' adulte' + ((r.adultes ?? r.personnes) > 1 ? 's' : '') + (r.enfants ? ', ' + r.enfants + ' enfant' + (r.enfants > 1 ? 's' : '') : '') : 'Ne vient pas';
     const when = r => new Date(r.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-    box.innerHTML = '<h3>Historique des réponses</h3><p style="margin:0 0 8px;font-size:13px;opacity:.75">Seule la dernière réponse de chaque famille compte ; les anciennes sont gardées pour l’historique.</p><ul>' + all.slice(0, 40).map(r => { const ok = !r.familyId || latest[r.familyId] === r; return `<li style="${ok ? '' : 'opacity:.55;text-decoration:line-through'}"><span>${esc(r.famille)}${r.familyId ? '' : ' (lien général)'}</span><span>${ptx(r)} · ${when(r)}${ok ? (r.familyId ? ' · <b>compte</b>' : '') : ' · remplacée'}</span></li>`; }).join('') + '</ul>';
+    box.hidden = !shown.length;
+    box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Dernières réponses</h3><button class="a-btn sm sec" type="button" id="hClear">Effacer l’historique</button></div><p style="margin:6px 0 8px;font-size:13px;opacity:.75">Seule la dernière réponse de chaque famille est gardée. Effacer l’historique ne change pas les réponses déjà notées sur les familles.</p><ul>' + shown.slice(0, 40).map(r => `<li><span>${esc(r.famille)}${r.familyId ? '' : ' (lien général)'}</span><span>${ptx(r)} · ${when(r)}</span></li>`).join('') + '</ul>';
+    $('#hClear').onclick = async () => { if (!confirm('Effacer tout l’historique des réponses ? Les réponses déjà notées sur chaque famille restent.')) return; await Promise.all(all.map(r => deleteDoc(r.ref).catch(() => {}))); };
   }, () => {});
 }
 onAuthStateChanged(auth, u => {
