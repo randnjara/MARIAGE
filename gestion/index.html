@@ -385,6 +385,13 @@ html.mode-admin #wrap{display:none}
 .side h3,.tcard h3{margin:0 0 8px;font:600 20px var(--serif);color:var(--espresso)}
 .side ul,.tcard ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
 .side li,.tcard li{display:flex;justify-content:space-between;gap:8px;font-size:14px;padding:6px 8px;border-radius:8px;background:rgba(230,212,184,.35)}
+.stat{cursor:pointer;text-align:left;font:inherit;color:inherit}.stat:hover,.stat[aria-pressed="true"]{outline:2px solid var(--brown)}
+#detail{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:-6px 0 22px}
+#detail .dh{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}#detail h3{margin:0;font:600 22px var(--serif);color:var(--espresso);flex:1}
+#detail .tw{max-height:460px;overflow:auto}#detail table{width:100%;border-collapse:collapse;font:14px var(--sans)}#detail th,#detail td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}#detail th{position:sticky;top:0;background:var(--card);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--caramel)}
+.talert{background:#fbe9e6;border:1px solid #d9a39a;color:#8a2a1c;border-radius:12px;padding:12px 16px;margin-bottom:14px;font:14px/1.5 var(--sans)}.talert b{font-weight:600}
+.tcard.bad{border:2px solid #c0392b;background:#fdf1ef}.tcard.bad .meta span:first-child{color:#c0392b;font-weight:600}
+#unassigned{display:block}
 .tcard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
 .tcard .row{display:flex;gap:8px;align-items:center}
 .tcard .row input.tname{flex:1;font:600 18px var(--serif)}
@@ -412,6 +419,7 @@ html.mode-admin #wrap{display:none}
   <p class="share" id="shareNote">Chaque famille reçoit son propre lien. Quand une famille répond sur son invitation, sa réponse s'affiche ici toute seule. Cette page n'est visible qu'avec votre compte Google.</p>
   <section class="stats" id="stats"></section>
   <section class="side" id="lastResp" hidden style="margin-bottom:18px"></section>
+  <section id="detail" hidden></section>
   <section class="sides" id="sides"></section>
   <nav class="tabs" role="tablist"><button role="tab" aria-selected="true" data-tab="fam" type="button">Familles</button><button role="tab" aria-selected="false" data-tab="tab" type="button">Plan de tables</button><button role="tab" aria-selected="false" data-tab="salle" type="button">Plan de salle</button></nav>
   <section id="tabFam">
@@ -428,6 +436,7 @@ html.mode-admin #wrap{display:none}
     <div id="famList"></div>
   </section>
   <section id="tabTab" hidden>
+    <div class="talert" id="talert1" hidden></div>
     <div class="toolbar">
       <input id="tName" placeholder="Nom de la table (ex. Table Antsirabe)" aria-label="Nom de la table" style="flex:1 1 220px">
       <input id="tCap" type="number" min="1" value="10" aria-label="Places" style="width:80px">
@@ -441,6 +450,7 @@ html.mode-admin #wrap{display:none}
       <span class="lg"><i style="background:#4f6b3a"></i>Confirmé</span><span class="lg"><i style="background:#b8875a"></i>En attente</span><span class="lg"><i style="background:#fff;border:1px dashed #b8a58a"></i>Place libre</span>
       <button class="a-btn sec" type="button" id="sPrint" style="margin-left:auto">Imprimer le plan</button>
     </div>
+    <div class="talert" id="talert2" hidden></div>
     <div id="salle"></div>
   </section>
 </main>
@@ -676,7 +686,8 @@ async function save(ref, data){ try { await ref.update(data); } catch(e){ toast(
 
 function render(){
   const tot = families.reduce((a,f)=>{ a.seats+=f.seats||0; if(f.status==='oui'){a.oui+=f.coming??f.seats; a.fo++;} else if(f.status==='non'){a.non+=f.seats||0;} else a.wait++; a.plan+=heads(f); return a; }, {seats:0,oui:0,fo:0,non:0,wait:0,plan:0});
-  $('#stats').innerHTML = [[families.length,'Familles'],[tot.seats,'Places invitées'],[tot.oui,'Personnes confirmées'],[tot.wait,'Familles sans réponse'],[tot.non,'Places déclinées'],[tot.plan,'Total prévu']].map(([n,l])=>`<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('');
+  $('#stats').innerHTML = [[families.length,'Familles','all'],[tot.seats,'Places invitées','all'],[tot.oui,'Personnes confirmées','oui'],[tot.wait,'Familles sans réponse','wait'],[tot.non,'Places déclinées','non'],[tot.plan,'Total prévu','plan']].map(([n,l,k])=>`<button type="button" class="stat" data-st="${k}" data-l="${l}" aria-pressed="${detailKey===l}"><b>${n}</b><span>${l}</span></button>`).join('');
+  renderDetail();
   const fct = $('#fCat').value, cl = allCats().concat(families.some(f=>!f.cat) ? [''] : []);
   $('#sides').innerHTML = cl.map(k => { const l = families.filter(f => (f.cat||'')===k);
     const t = l.reduce((a,f)=>{ a.seats+=f.seats||0; if(f.status==='oui') a.oui+=f.coming??f.seats; else if(f.status!=='non') a.wait++; return a; }, {seats:0,oui:0,wait:0});
@@ -894,7 +905,26 @@ $('#iGo').addEventListener('click', async () => {
 });
 
 /* tables */
+let detailKey = '';
+const STF = { all: f => true, oui: f => f.status==='oui', wait: f => f.status!=='oui' && f.status!=='non', non: f => f.status==='non', plan: f => f.status!=='non' };
+const tablesOf = f => tables.filter(t => atT(f, t.id) > 0).map(t => t.name + (atT(f, t.id) < heads(f) ? ` (${atT(f, t.id)})` : '')).join(', ');
+const LAB = {attente:'En attente', oui:'Vient', non:'Ne vient pas'};
+function detailRows(){ const b = $('#stats').querySelector(`[data-l="${detailKey}"]`); const k = b ? b.dataset.st : 'all';
+  return families.filter(STF[k]).sort((a,b)=>(a.cat||'').localeCompare(b.cat||'') || a.name.localeCompare(b.name)).map(f => ({ 'Famille':f.name, 'Catégorie':f.cat||'', 'Table':tablesOf(f), 'Adultes':f.adults ?? '', 'Enfants':f.kids ?? '', 'Places invitées':f.seats, 'Réponse':LAB[f.status||'attente'], 'Personnes prévues':heads(f), 'Téléphone':f.phone||'' })); }
+function renderDetail(){ const d = $('#detail'); if (!detailKey){ d.hidden = true; return; } d.hidden = false; const R = detailRows(), cols = R.length ? Object.keys(R[0]) : [];
+  d.innerHTML = `<div class="dh"><h3>${esc(detailKey)} · ${R.length} famille${R.length>1?'s':''}, ${R.reduce((a,r)=>a+(+r['Personnes prévues']||0),0)} personnes prévues</h3><button class="a-btn sec" type="button" id="dExp">Exporter en Excel</button><button class="a-btn sec" type="button" id="dClose">Fermer</button></div>`
+   + (R.length ? `<div class="tw"><table><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr>${R.map(r=>`<tr>${cols.map(c=>`<td>${esc(String(r[c]))}</td>`).join('')}</tr>`).join('')}</table></div>` : '<p>Aucune famille.</p>'); }
+$('#stats').addEventListener('click', e => { const b = e.target.closest('[data-l]'); if (!b) return; detailKey = detailKey===b.dataset.l ? '' : b.dataset.l; render(); });
+$('#detail').addEventListener('click', async e => {
+  if (e.target.id==='dClose'){ detailKey=''; render(); }
+  if (e.target.id==='dExp'){ if (!window.XLSX || !downloads) return; const R = detailRows(); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(R.length ? R : [{Famille:''}]), detailKey.slice(0,30));
+    const out = XLSX.write(wb, { bookType:'xlsx', type:'array' }); try { await downloads.save({ filename:`${norm(detailKey).replace(/[^a-z0-9]+/g,'-')}.xlsx`, data: new Blob([out], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}) }); } catch(err){} }
+});
+function tableAlert(){ const bad = tables.slice().sort((a,b)=>(a.order??999)-(b.order??999)).map(t => [t, atTable(t.id).reduce((a,[,k])=>a+k,0), t.capacity||10]).filter(([,n,c]) => n !== c);
+  const html = bad.length ? `<b>⚠ ${bad.length} table${bad.length>1?'s':''} n’${bad.length>1?'ont':'a'} pas le bon nombre :</b> ` + bad.map(([t,n,c]) => `${esc(t.name)} : ${n}/${c} (${n>c ? (n-c)+' de trop' : 'manque '+(c-n)})`).join(' · ') : '';
+  for (const id of ['#talert1','#talert2']){ $(id).hidden = !bad.length; $(id).innerHTML = html; } }
 function renderSalle(){
+  tableAlert();
   const T = tables.slice().sort((a,b)=>(a.order??999)-(b.order??999) || a.name.localeCompare(b.name));
   const W = 340, H = 280, cx = 170, cy = 132, R = 46, RC = 68, RL = 84;
   const box = t => { const seats = []; atTable(t.id).forEach(([f, n]) => { const off = tables.filter(x => x.id !== t.id && (x.order??999) < (t.order??999)).reduce((a, x) => a + atT(f, x.id), 0), many = heads(f) > 1; for (let i=0;i<n;i++) seats.push({f, lab: many ? `${f.name} ${off+i+1}` : f.name}); });
@@ -906,10 +936,11 @@ function renderSalle(){
         const lab = s.lab.length>16 ? s.lab.slice(0,15)+'…' : s.lab;
         g += `<text x="${lx.toFixed(1)}" y="${(ly+dy).toFixed(1)}" text-anchor="${an}" font-size="10.5" fill="#3f2614">${esc(lab)}</text>`; } }
     const m = (t.name||'').match(/^(\d+)\.?\s*(.*)$/), num = m ? m[1] : '', nm = m ? m[2] : t.name;
-    return `<div class="stab"><svg viewBox="0 0 ${W} ${H}" width="100%"><ellipse cx="${cx+3}" cy="${cy+5}" rx="${R+2}" ry="${R+2}" fill="rgba(60,35,15,.18)"/><circle cx="${cx}" cy="${cy}" r="${R}" fill="url(#cloth)" stroke="#a37a4e" stroke-width="2"/><circle cx="${cx}" cy="${cy}" r="${R-6}" fill="none" stroke="#d8c19d" stroke-dasharray="2 3"/>
+    const cap = t.capacity||10, bad = seats.length !== cap;
+    return `<div class="stab"><svg viewBox="0 0 ${W} ${H}" width="100%">${bad ? `<circle cx="${cx}" cy="${cy}" r="${RL+6}" fill="rgba(192,57,43,.08)" stroke="#c0392b" stroke-width="2" stroke-dasharray="6 4"/>` : ''}<ellipse cx="${cx+3}" cy="${cy+5}" rx="${R+2}" ry="${R+2}" fill="rgba(60,35,15,.18)"/><circle cx="${cx}" cy="${cy}" r="${R}" fill="url(#cloth)" stroke="#a37a4e" stroke-width="2"/><circle cx="${cx}" cy="${cy}" r="${R-6}" fill="none" stroke="#d8c19d" stroke-dasharray="2 3"/>
       <g transform="translate(${cx} ${cy-30})">${[[-7,0,'#8a5a34'],[7,0,'#efe0c4'],[0,-5,'#b98a5e']].map(([dx,dy,c])=>`<circle cx="${dx}" cy="${dy}" r="5" fill="${c}" stroke="#6b4a2f" stroke-width=".6"/>`).join('')}<circle cx="0" cy="-1" r="2" fill="#fff"/></g>
       <text x="${cx}" y="${cy+4}" text-anchor="middle" font-size="22" font-weight="700" fill="#52331c">${esc(num)}</text><text x="${cx}" y="${cy+20}" text-anchor="middle" font-size="11" fill="#52331c">${esc(nm.length>14?nm.slice(0,13)+'…':nm)}</text>${g}
-      <text x="${cx}" y="${H-8}" text-anchor="middle" font-size="12" fill="#8e6137">${seats.length} / ${t.capacity||10} personnes</text></svg></div>`; };
+      <text x="${cx}" y="${H-8}" text-anchor="middle" font-size="${bad?13:12}" font-weight="${bad?700:400}" fill="${bad?'#c0392b':'#8e6137'}">${bad?'⚠ ':''}${seats.length} / ${cap} personnes${bad ? (seats.length>cap ? ` · ${seats.length-cap} de trop` : ` · manque ${cap-seats.length}`) : ''}</text></svg></div>`; };
   $('#salle').innerHTML = !T.length ? '<div class="empty"><h3>Aucune table</h3>Importez votre classeur ou créez des tables dans « Plan de tables ».</div>'
     : `<svg width="0" height="0" style="position:absolute"><defs><radialGradient id="cloth" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#fffaf1"/><stop offset="1" stop-color="#ead8ba"/></radialGradient></defs></svg><div class="room"><div class="stage">Table d’honneur · Tsidy &amp; Njara · Mihaja Kaël</div><div class="floor">Piste de danse</div><div class="stabs">${T.map(box).join('')}</div><div class="door">Entrée</div></div>`;
 }
@@ -922,7 +953,7 @@ function renderTables(){
   const og = l => l.map(f=>`<option value="${esc(f.id)}">${esc(f.name)} (${heads(f)})</option>`).join('');
   const unOpts = '<option value="">Ajouter une famille…</option>' + allCats().concat(['']).map(c => { const l = un.filter(f => (f.cat||'')===c); return l.length ? `<optgroup label="${esc(c||'Sans catégorie')}">${og(l)}</optgroup>` : ''; }).join('');
   $('#tGrid').innerHTML = tables.map(t => { const fs = atTable(t.id); const n = fs.reduce((a,[,k])=>a+k,0); const cap = t.capacity||10; return `
-  <article class="tcard" data-id="${esc(t.id)}">
+  <article class="tcard${n!==cap?' bad':''}" data-id="${esc(t.id)}">
     <div class="row"><input class="tname" value="${esc(t.name)}" data-act="tname" aria-label="Nom de la table"><button class="a-btn sm sec" type="button" data-act="tren">Modifier</button><input class="tcap" type="number" min="1" value="${cap}" data-act="tcap" aria-label="Places"><button class="x" type="button" data-act="tdel" title="Supprimer la table" aria-label="Supprimer la table">✕</button></div>
     <div class="meta"><span>${n} / ${cap} personnes</span></div>
     <div class="bar${n>cap?' over':''}"><i style="width:${Math.min(100, n/cap*100)}%"></i></div>
@@ -1021,7 +1052,22 @@ function watchResponses() {
     const ptx = r => r.reponse === 'Vient' ? 'Vient · ' + (r.adultes ?? r.personnes) + ' adulte' + ((r.adultes ?? r.personnes) > 1 ? 's' : '') + (r.enfants ? ', ' + r.enfants + ' enfant' + (r.enfants > 1 ? 's' : '') : '') : 'Ne vient pas';
     const when = r => new Date(r.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
     box.hidden = !shown.length;
-    box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Dernières réponses</h3><button class="a-btn sm sec" type="button" id="hClear">Effacer l’historique</button></div><p style="margin:6px 0 8px;font-size:13px;opacity:.75">Seule la dernière réponse de chaque famille est gardée. Effacer l’historique ne change pas les réponses déjà notées sur les familles.</p><ul>' + shown.slice(0, 40).map(r => `<li><span>${esc(r.famille)}${r.familyId ? '' : ' (lien général)'}</span><span>${ptx(r)} · ${when(r)}</span></li>`).join('') + '</ul>';
+    box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Dernières réponses</h3><button class="a-btn sm sec" type="button" id="hClear">Effacer l’historique</button></div><p style="margin:6px 0 8px;font-size:13px;opacity:.75">Seule la dernière réponse de chaque famille est gardée. Effacer l’historique ne change pas les réponses déjà notées sur les familles.</p><ul>' + shown.slice(0, 60).map((r, i) => `<li><span>${esc(r.famille)}${r.familyId ? '' : ' (lien général)'}</span><span>${ptx(r)} · ${when(r)} <button class="a-btn sm sec" type="button" data-rmod="${i}">Modifier</button> <button class="a-btn sm sec" type="button" data-rdel="${i}" style="color:#a33">Effacer</button></span></li>`).join('') + '</ul>';
+    box.onclick = async e => {
+      const bm = e.target.closest('[data-rmod]'), bd = e.target.closest('[data-rdel]');
+      if (bm) { const r = shown[+bm.dataset.rmod]; if (!r) return;
+        const a0 = r.reponse === 'Vient' ? (r.adultes ?? r.personnes) : 0, e0 = r.reponse === 'Vient' ? (r.enfants || 0) : 0;
+        const a = prompt(`Réponse de ${r.famille} : nombre d’adultes (0 = ne vient pas)`, a0); if (a === null) return;
+        const k = parseInt(a, 10) > 0 ? prompt(`Nombre d’enfants pour ${r.famille}`, e0) : '0'; if (k === null) return;
+        const na = Math.max(0, parseInt(a, 10) || 0), ne = Math.max(0, parseInt(k, 10) || 0), vient = na + ne > 0;
+        try { await updateDoc(r.ref, { famille: r.famille + ` |A${na}|E${ne}`, personnes: na + ne, reponse: vient ? 'Vient' : 'Ne vient pas', applied: true });
+          if (r.familyId) await updateDoc(doc(fs, 'families', r.familyId), { status: vient ? 'oui' : 'non', coming: vient ? na + ne : null, adultes: vient ? na : null, enfants: vient ? ne : null }); }
+        catch (err) { alert('Modification refusée : ' + (err.code || err.message)); } }
+      if (bd) { const r = shown[+bd.dataset.rdel]; if (!r) return;
+        if (!confirm(`Effacer la réponse de ${r.famille} ? La famille repassera « En attente ».`)) return;
+        try { await deleteDoc(r.ref); if (r.familyId) await updateDoc(doc(fs, 'families', r.familyId), { status: 'attente', coming: null, adultes: null, enfants: null }); }
+        catch (err) { alert('Suppression refusée : ' + (err.code || err.message)); } }
+    };
     $('#hClear').onclick = async () => { if (!confirm('Effacer tout l’historique des réponses ? Les réponses déjà notées sur chaque famille restent.')) return; await Promise.all(all.map(r => deleteDoc(r.ref).catch(() => {}))); };
   }, () => {});
 }
