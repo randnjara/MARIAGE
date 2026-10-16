@@ -782,8 +782,8 @@ function planFromWorkbook(wb){
     const hdr = g[hr].map(c => ucw(c).toUpperCase());
     const ec = hdr.findIndex(h => /^ENFANTS?$/.test(h)), bc = hdr.findIndex(h => /^B[EÉ]B[EÉ]S?$/.test(h)), nc = ac - 1;
     const seat = {};
-    g.forEach((r, i) => r.forEach((c, j) => { const m = ucw(c).match(/^TABLE\W*(\d+)\W*$/i); if (!m) return; const no = +m[1];
-      for (let k = i + 1; k < g.length; k++){ const nm = ucw(g[k][j]); if (!nm || /^TABLE\W*\d+\W*$/i.test(nm)) break;
+    g.forEach((r, i) => r.forEach((c, j) => { const m = ucw(c).match(/^TABLE\D{0,7}?(\d+)\D{0,3}$/i); if (!m) return; const no = +m[1];
+      for (let k = i + 1; k < g.length; k++){ const nm = ucw(g[k][j]); if (!nm || /^TABLE\D{0,7}?\d+\D{0,3}$/i.test(nm)) break;
         const key = nkey(nm); seat[key] = seat[key] || {}; seat[key][no] = (seat[key][no] || 0) + num(g[k][j+1]) + num(g[k][j+2]); } }));
     const seen = {};
     for (let i = hr + 1; i < g.length; i++){ const r = g[i]; if (typeof r[nc] === 'number') continue; const nm = ucw(r[nc]);
