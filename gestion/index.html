@@ -411,7 +411,7 @@ html.mode-admin #wrap{display:none}
       <input type="search" id="q" placeholder="Rechercher une famille" aria-label="Rechercher une famille">
       <select id="fStatus" aria-label="Filtrer par réponse"><option value="">Toutes les réponses</option><option value="attente">En attente</option><option value="oui">Viennent</option><option value="non">Ne viennent pas</option><option value="nonenv">Invitation pas encore envoyée</option></select>
       <select id="fCat" aria-label="Filtrer par catégorie"><option value="">Toutes les catégories</option></select>
-      <select id="fSide" aria-label="Filtrer par côté"><option value="">Les deux familles</option><option value="njara">Famille Njara</option><option value="tsidy">Famille Tsidy</option><option value="none">À classer</option></select>
+      <select id="fSide" hidden aria-label="Filtrer par côté"><option value="">Les deux familles</option><option value="njara">Famille Njara</option><option value="tsidy">Famille Tsidy</option><option value="none">À classer</option></select>
       <button class="a-btn sec" type="button" id="aImport">Importer Excel</button>
       <button class="a-btn sec" type="button" id="aClear" style="color:#9b2c2c;border-color:rgba(155,44,44,.45)">Supprimer toute la liste</button>
       <button class="a-btn" type="button" id="aAdd">Ajouter une famille</button>
@@ -651,19 +651,20 @@ async function save(ref, data){ try { await ref.update(data); } catch(e){ toast(
 function render(){
   const tot = families.reduce((a,f)=>{ a.seats+=f.seats||0; if(f.status==='oui'){a.oui+=f.coming??f.seats; a.fo++;} else if(f.status==='non'){a.non+=f.seats||0;} else a.wait++; a.plan+=heads(f); return a; }, {seats:0,oui:0,fo:0,non:0,wait:0,plan:0});
   $('#stats').innerHTML = [[families.length,'Familles'],[tot.seats,'Places invitées'],[tot.oui,'Personnes confirmées'],[tot.wait,'Familles sans réponse'],[tot.non,'Places déclinées'],[tot.plan,'Total prévu']].map(([n,l])=>`<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('');
-  const SN = {njara:'Famille Njara', tsidy:'Famille Tsidy'}, fsd = $('#fSide').value;
-  $('#sides').innerHTML = ['njara','tsidy','none'].map(k => { const l = families.filter(f => (f.side||'none')===k); if (k==='none' && !l.length) return '';
+  const fct = $('#fCat').value, cl = allCats().concat(families.some(f=>!f.cat) ? [''] : []);
+  $('#sides').innerHTML = cl.map(k => { const l = families.filter(f => (f.cat||'')===k);
     const t = l.reduce((a,f)=>{ a.seats+=f.seats||0; if(f.status==='oui') a.oui+=f.coming??f.seats; else if(f.status!=='non') a.wait++; return a; }, {seats:0,oui:0,wait:0});
-    return `<button type="button" class="sidecard" data-side="${k}" aria-pressed="${fsd===k}"><b>${SN[k]||'À classer'}</b>${l.length} famille${l.length>1?'s':''} · ${t.seats} place${t.seats>1?'s':''} · ${t.oui} confirmé${t.oui>1?'s':''} · ${t.wait} sans réponse</button>`; }).join('');
+    return `<button type="button" class="sidecard" data-cat="${esc(k||'__none')}" aria-pressed="${fct===(k||'__none')}"><b>${esc(k||'Sans catégorie')}</b>${l.length} famille${l.length>1?'s':''} · ${t.seats} place${t.seats>1?'s':''} · ${t.oui} confirmé${t.oui>1?'s':''} · ${t.wait} sans réponse</button>`; }).join('');
   renderFamilies(); renderTables();
 }
-$('#sides').addEventListener('click', e => { const b = e.target.closest('[data-side]'); if (!b) return; $('#fSide').value = $('#fSide').value===b.dataset.side ? '' : b.dataset.side; render(); });
+$('#sides').addEventListener('click', e => { const b = e.target.closest('[data-cat]'); if (!b) return; const v = b.dataset.cat; renderFamilies(); $('#fCat').value = $('#fCat').value===v ? '' : v; render(); });
+const CATS = ['FAMILLE TSIDY DADA','FAMILLE TSIDY NENY','FAMILLE NJARA','AMIE NJARA','MPIASA NJARA TSIDY','AMI TSIDY','BASKET'];
+function allCats(){ const f = [...new Set(families.map(x => x.cat).filter(Boolean))]; return CATS.concat(f.filter(c => !CATS.includes(c)).sort()); }
 function renderFamilies(){
   const q = norm($('#q').value), st = $('#fStatus').value, sd = $('#fSide').value, ct = $('#fCat').value;
-  const cats = [...new Set(families.map(f => f.cat).filter(Boolean))].sort();
-  $('#fCat').innerHTML = '<option value="">Toutes les catégories</option>' + cats.map(c => `<option value="${esc(c)}"${c===ct?' selected':''}>${esc(c)} (${families.filter(f=>f.cat===c).length})</option>`).join('');
-  $('#fCat').hidden = !cats.length;
-  const list = families.filter(f => (!q || norm(f.name).includes(q)) && (!ct || f.cat===ct) && (!sd || (f.side||'none')===sd) && (!st || (st==='nonenv' ? !f.sent : (f.status||'attente')===st)));
+  const cats = allCats();
+  $('#fCat').innerHTML = '<option value="">Toutes les catégories</option>' + cats.map(c => `<option value="${esc(c)}"${c===ct?' selected':''}>${esc(c)} (${families.filter(f=>f.cat===c).length})</option>`).join('') + (families.some(f=>!f.cat) ? `<option value="__none"${ct==='__none'?' selected':''}>Sans catégorie (${families.filter(f=>!f.cat).length})</option>` : '');
+  const list = families.filter(f => (!q || norm(f.name).includes(q)) && (!ct || (ct==='__none' ? !f.cat : f.cat===ct)) && (!sd || (f.side||'none')===sd) && (!st || (st==='nonenv' ? !f.sent : (f.status||'attente')===st)));
   if (!families.length){ $('#famList').innerHTML = '<div class="empty"><h3>Aucune famille pour l’instant</h3>Importez votre fichier Excel (une colonne pour le nom, une pour le nombre d’invités) ou ajoutez une famille à la main.<p><button class="a-btn" type="button" id="seedBtn">Charger mes 50 familles</button></p></div>'; return; }
   if (!list.length){ $('#famList').innerHTML = '<div class="empty">Aucune famille ne correspond à ce filtre.</div>'; return; }
   const topts = sel => `<option value="">Sans table</option>` + tables.map(t=>`<option value="${esc(t.id)}"${t.id===sel?' selected':''}>${esc(t.name)}</option>`).join('');
@@ -692,7 +693,7 @@ $('#famList').addEventListener('change', e => {
   if (el.dataset.act==='table') save(fdoc(f.id), {table: el.value});
   if (el.dataset.act==='coming'){ const n = Math.max(1, Math.min(f.seats, parseInt(el.value,10)||1)); save(fdoc(f.id), {coming:n}); }
 });
-$('#q').addEventListener('input', renderFamilies); $('#fStatus').addEventListener('change', renderFamilies); $('#fSide').addEventListener('change', render);
+$('#q').addEventListener('input', renderFamilies); $('#fStatus').addEventListener('change', renderFamilies); $('#fCat').addEventListener('change', render); $('#fSide').addEventListener('change', render);
 document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => {
   tab = b.dataset.tab; document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-selected', x===b));
   $('#tabFam').hidden = tab!=='fam'; $('#tabTab').hidden = tab!=='tab';
@@ -860,7 +861,8 @@ function renderTables(){
   const un = active.filter(f => !f.table || !tables.some(t => t.id === f.table));
   $('#unassigned').innerHTML = `<h3>Sans table (${un.reduce((a,f)=>a+heads(f),0)} pers.)</h3>` + (un.length ? '<ul>' + un.map(f=>`<li><span>${esc(f.name)}</span><span>${heads(f)}</span></li>`).join('') + '</ul>' : '<p style="margin:0;font-size:14px">Toutes les familles ont une table.</p>');
   if (!tables.length){ $('#tGrid').innerHTML = '<div class="empty"><h3>Aucune table</h3>Créez vos tables avec leur nom et leur nombre de places, puis ajoutez-y des familles ou utilisez le placement automatique.</div>'; return; }
-  const unOpts = '<option value="">Ajouter une famille…</option>' + un.map(f=>`<option value="${esc(f.id)}">${esc(f.name)} (${heads(f)})</option>`).join('');
+  const og = l => l.map(f=>`<option value="${esc(f.id)}">${esc(f.name)} (${heads(f)})</option>`).join('');
+  const unOpts = '<option value="">Ajouter une famille…</option>' + allCats().concat(['']).map(c => { const l = un.filter(f => (f.cat||'')===c); return l.length ? `<optgroup label="${esc(c||'Sans catégorie')}">${og(l)}</optgroup>` : ''; }).join('');
   $('#tGrid').innerHTML = tables.map(t => { const fs = active.filter(f => f.table === t.id); const n = fs.reduce((a,f)=>a+heads(f),0); const cap = t.capacity||10; return `
   <article class="tcard" data-id="${esc(t.id)}">
     <div class="row"><input class="tname" value="${esc(t.name)}" data-act="tname" aria-label="Nom de la table"><button class="a-btn sm sec" type="button" data-act="tren">Modifier</button><input class="tcap" type="number" min="1" value="${cap}" data-act="tcap" aria-label="Places"><button class="x" type="button" data-act="tdel" title="Supprimer la table" aria-label="Supprimer la table">✕</button></div>
@@ -910,7 +912,7 @@ $('#aExport').addEventListener('click', async () => {
   if (!downloads || !window.XLSX) return;
   const tname = id => (tables.find(t=>t.id===id)||{}).name || '';
   const lab = {attente:'En attente', oui:'Vient', non:'Ne vient pas'};
-  const s1 = families.map(f => ({ 'Côté':({njara:'Njara',tsidy:'Tsidy'})[f.side]||'', 'Famille':f.name, 'Adultes':f.adults ?? '', 'Enfants':f.kids ?? '', 'Places invitées':f.seats,'Téléphone':f.phone||'', 'Invitation envoyée':f.sent?'Oui':'Non', 'Réponse':lab[f.status||'attente'], 'Personnes prévues':heads(f), 'Table':tname(f.table) }));
+  const s1 = families.map(f => ({ 'Catégorie':f.cat||'', 'Famille':f.name, 'Adultes':f.adults ?? '', 'Enfants':f.kids ?? '', 'Places invitées':f.seats,'Téléphone':f.phone||'', 'Invitation envoyée':f.sent?'Oui':'Non', 'Réponse':lab[f.status||'attente'], 'Personnes prévues':heads(f), 'Table':tname(f.table) }));
   const s2 = tables.map(t => { const fs = families.filter(f=>f.table===t.id && f.status!=='non'); return { 'Table':t.name, 'Places':t.capacity||10, 'Personnes':fs.reduce((a,f)=>a+heads(f),0), 'Familles':fs.map(f=>`${f.name} (${heads(f)})`).join(', ') }; });
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(s1), 'Invités');
