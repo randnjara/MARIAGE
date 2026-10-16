@@ -853,7 +853,12 @@ async function runPlanImport(P){
     else { await db.collection('families').add({ ...data, phone: '', status: 'attente', coming: null, sent: false, created: Date.now() }); added++; }
     $('#iGo').textContent = `Familles… ${added + upd}/${P.fams.length}`;
   }
-  return `${tn} tables, ${added} famille${added>1?'s':''} ajoutée${added>1?'s':''}, ${upd} mise${upd>1?'s':''} à jour`;
+  const keep = new Set(P.fams.map(x => norm(x.name) + '|' + x.cat)), gone = families.filter(f => !keep.has(norm(f.name) + '|' + (f.cat || '')));
+  let del = 0;
+  if (gone.length && confirm(`${gone.length} famille${gone.length>1?'s':''} de la gestion ne ${gone.length>1?'sont':'est'} plus dans l’Excel :\n\n${gone.slice(0,25).map(f => '• ' + f.name + (f.cat ? ' (' + f.cat + ')' : '')).join('\n')}${gone.length>25?'\n…':''}\n\nLes supprimer de la gestion ?`)){
+    for (const f of gone){ await fdoc(f.id).delete(); del++; }
+  }
+  return `${tn} tables, ${added} famille${added>1?'s':''} ajoutée${added>1?'s':''}, ${upd} mise${upd>1?'s':''} à jour` + (del ? `, ${del} supprimée${del>1?'s':''}` : '');
 }
 $('#iGo').addEventListener('click', async () => {
   if (impPlan){ $('#iGo').disabled = true; try { const m = await runPlanImport(impPlan); $('#ovImp').hidden = true; toast(m); } catch(err){ toast('Import interrompu : ' + (err.message||err.code)); } $('#iGo').disabled = false; return; }
