@@ -650,6 +650,7 @@ function atT(f, tid){
   const h = heads(f); if (!h || !f.table) return 0;
   const a = f.alloc && f.alloc[f.table] != null ? f.alloc : null;
   if (!a) return tid === f.table ? h : 0;
+  if (f.status !== 'oui') return tables.some(x => x.id === tid) ? (a[tid] || 0) : 0;
   let rest = h; const out = {};
   for (const [t, c] of Object.entries(a)){ if (t === f.table || !tables.some(x => x.id === t)) continue; const k = Math.min(c, rest); out[t] = k; rest -= k; }
   out[f.table] = rest; return out[tid] || 0;
@@ -773,7 +774,7 @@ function planFromWorkbook(wb){
   const num = v => { const x = parseFloat(String(v).replace(',', '.')); return isFinite(x) ? Math.round(x) : 0; };
   const tnames = {};
   grid(tSheet).forEach(r => { const m = ucw(r[0]).match(/^(\d+)\s*[.\-)]\s*(.+)$/); if (m) tnames[+m[1]] = ucw(r[0]); });
-  const fams = [];
+  const fams = [], orphans = [], blocks = [];
   wb.SheetNames.filter(n => n !== tSheet && !/r[ée]cap/i.test(n)).forEach(cat => {
     const g = grid(cat);
     let hr = -1, ac = -1;
@@ -781,21 +782,28 @@ function planFromWorkbook(wb){
     if (hr < 0) return;
     const hdr = g[hr].map(c => ucw(c).toUpperCase());
     const ec = hdr.findIndex(h => /^ENFANTS?$/.test(h)), bc = hdr.findIndex(h => /^B[EÉ]B[EÉ]S?$/.test(h)), nc = ac - 1;
-    const seat = {};
     g.forEach((r, i) => r.forEach((c, j) => { const m = ucw(c).match(/^TABLE\D{0,7}?(\d+)\D{0,3}$/i); if (!m) return; const no = +m[1];
       for (let k = i + 1; k < g.length; k++){ const nm = ucw(g[k][j]); if (!nm || /^TABLE\D{0,7}?\d+\D{0,3}$/i.test(nm)) break;
-        const key = nkey(nm); seat[key] = seat[key] || {}; seat[key][no] = (seat[key][no] || 0) + num(g[k][j+1]) + num(g[k][j+2]); } }));
+        const n = num(g[k][j+1]) + num(g[k][j+2]); if (n) blocks.push({ key: nkey(nm), name: nm, no, n, cat }); } }));
     const seen = {};
     for (let i = hr + 1; i < g.length; i++){ const r = g[i]; if (typeof r[nc] === 'number') continue; const nm = ucw(r[nc]);
       if (!nm || /^(total|famille|ami|amie)$/i.test(nm)) continue;
       const a = num(r[ac]), e = ec >= 0 ? num(r[ec]) : 0, b = bc >= 0 ? num(r[bc]) : 0; if (!(a + e + b)) continue;
       const key = nkey(nm); if (seen[key]) continue; seen[key] = 1;
-      const s = seat[key] || {}; const tl = Object.entries(s).sort((x, y) => y[1] - x[1] || x[0] - y[0]);
-      fams.push({ name: nm, cat, adults: a, kids: e + b, bebes: b, seats: a + e + b, tableNo: tl.length ? +tl[0][0] : 0,
-        tnote: tl.length > 1 ? tl.map(([t, c]) => `table ${t} : ${c}`).join(', ') : '', split: tl.length > 1 ? Object.fromEntries(tl) : null });
+      fams.push({ name: nm, key, cat, adults: a, kids: e + b, bebes: b, seats: a + e + b, s: {}, placed: 0 });
     }
   });
-  return { tnames, fams };
+  // un nom écrit sous une table peut venir d'une autre feuille (catégorie) : on le rattache à sa famille
+  for (const bl of blocks){
+    const same = fams.find(f => f.key === bl.key && f.cat === bl.cat), others = fams.filter(f => f.key === bl.key && f.cat !== bl.cat);
+    const f = same || (others.length ? others.sort((x, y) => (x.placed - x.seats) - (y.placed - y.seats))[0] : null);
+    if (!f){ orphans.push({ name: bl.name, cat: bl.cat, table: bl.no, n: bl.n }); continue; }
+    f.s[bl.no] = (f.s[bl.no] || 0) + bl.n; f.placed += bl.n;
+  }
+  for (const f of fams){ const tl = Object.entries(f.s).sort((x, y) => y[1] - x[1] || x[0] - y[0]);
+    f.tableNo = tl.length ? +tl[0][0] : 0; f.tnote = tl.length > 1 ? tl.map(([t, c]) => `table ${t} : ${c}`).join(', ') : ''; f.split = tl.length ? Object.fromEntries(tl) : null;
+    delete f.s; delete f.placed; delete f.key; }
+  return { tnames, fams, orphans };
 }
 
 function loadSheet(k){
@@ -826,7 +834,7 @@ $('#file').addEventListener('change', async e => {
     if (impPlan){
       const P = impPlan, cats = {}; P.fams.forEach(f => { const c = cats[f.cat] = cats[f.cat] || {n:0,p:0}; c.n++; c.p += f.seats; });
       const tot = P.fams.reduce((a,f)=>a+f.seats,0), notab = P.fams.filter(f=>!f.tableNo).length;
-      $('#iInfo').innerHTML = `Classeur complet reconnu : <b>${Object.keys(P.tnames).length} tables</b> et <b>${P.fams.length} familles</b> (${tot} personnes) dans ${Object.keys(cats).length} catégories. Chaque famille est placée automatiquement à sa table.` + (notab ? ` ${notab} famille${notab>1?'s':''} sans numéro de table resteront « Sans table ».` : '') + ' Une famille déjà présente (même nom et même catégorie) est mise à jour.';
+      $('#iInfo').innerHTML = `Classeur complet reconnu : <b>${Object.keys(P.tnames).length} tables</b> et <b>${P.fams.length} familles</b> (${tot} personnes) dans ${Object.keys(cats).length} catégories. Chaque famille est placée automatiquement à sa table.` + (notab ? ` ${notab} famille${notab>1?'s':''} sans numéro de table resteront « Sans table ».` : '') + ' Une famille déjà présente (même nom et même catégorie) est mise à jour.' + (P.orphans.length ? `<br><br><b style="color:#a33">Attention : ${P.orphans.length} nom${P.orphans.length>1?'s':''} écrit${P.orphans.length>1?'s':''} sous une table ne ${P.orphans.length>1?'sont':'est'} pas dans la liste de la feuille</b> (orthographe différente ?) : ${P.orphans.map(o => `${esc(o.name)} (table ${o.table}, ${o.n}, ${esc(o.cat)})`).join(' · ')}. Corrigez le nom dans l’Excel pour qu’il soit identique, puis réimportez.` : '');
       $('#iPrev').innerHTML = '<tr><th>Catégorie</th><th>Familles</th><th>Personnes</th></tr>' + Object.entries(cats).map(([c,v])=>`<tr><td>${esc(c)}</td><td>${v.n}</td><td>${v.p}</td></tr>`).join('');
       $('#iGo').textContent = `Importer ${P.fams.length} familles et ${Object.keys(P.tnames).length} tables`;
       $('#ovImp').hidden = false; return;
