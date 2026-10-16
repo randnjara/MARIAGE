@@ -691,7 +691,7 @@ function renderFamilies(){
   const cats = allCats();
   $('#fCat').innerHTML = '<option value="">Toutes les catégories</option>' + cats.map(c => `<option value="${esc(c)}"${c===ct?' selected':''}>${esc(c)} (${families.filter(f=>f.cat===c).length})</option>`).join('') + (families.some(f=>!f.cat) ? `<option value="__none"${ct==='__none'?' selected':''}>Sans catégorie (${families.filter(f=>!f.cat).length})</option>` : '');
   const list = families.filter(f => (!q || norm(f.name).includes(q)) && (!ct || (ct==='__none' ? !f.cat : f.cat===ct)) && (!sd || (f.side||'none')===sd) && (!st || (st==='nonenv' ? !f.sent : (f.status||'attente')===st)));
-  if (!families.length){ $('#famList').innerHTML = '<div class="empty"><h3>Aucune famille pour l’instant</h3>Importez votre fichier Excel (une colonne pour le nom, une pour le nombre d’invités) ou ajoutez une famille à la main.<p><button class="a-btn" type="button" id="seedBtn">Charger mes 50 familles</button></p></div>'; return; }
+  if (!families.length){ $('#famList').innerHTML = '<div class="empty"><h3>Aucune famille pour l’instant</h3>Importez votre fichier Excel (votre classeur LISTE INVITE.xlsx) ou ajoutez une famille à la main.</div>'; return; }
   if (!list.length){ $('#famList').innerHTML = '<div class="empty">Aucune famille ne correspond à ce filtre.</div>'; return; }
   const topts = sel => `<option value="">Sans table</option>` + tables.map(t=>`<option value="${esc(t.id)}"${t.id===sel?' selected':''}>${esc(t.name)}</option>`).join('');
   $('#famList').innerHTML = '<div class="grid">' + list.map(f => { const s = f.status||'attente'; const ph = waPhone(f.phone); return `
