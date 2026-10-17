@@ -566,6 +566,7 @@ function updateRsvp(){
   const full = count + kids >= max;
   $('#minus').disabled = count <= 1; $('#plus').disabled = full && kids <= 0;
   $('#kMinus').disabled = kids <= 0; $('#kPlus').disabled = full && count <= 1;
+  window.__nUpd && window.__nUpd();
   const tot = $('#tot'); if (tot) { tot.hidden = !guest; tot.textContent = `${count + kids} place${count + kids > 1 ? 's' : ''} sur ${max}`; }
   const who = guest ? guest.n : '';
   const pers = `${count} adulte${count > 1 ? 's' : ''}` + (kids ? ` et ${kids} enfant${kids > 1 ? 's' : ''}` : '');
@@ -587,15 +588,16 @@ const ptxt = r => { const a = r.a ?? r.p, e = r.e || 0; return `${a} adulte${a >
 const rtxt = r => r.r === 'Vient' ? `Votre réponse est enregistrée, vous venez à ${ptxt(r)}.` : 'Votre réponse est enregistrée, vous ne pourrez pas venir.';
 const fenc = r => { const q = String(r.q || '').replace(/[|\n\r]/g, ' ').trim().slice(0, 30); const suf = ` |A${r.a}|E${r.e}` + (r.r === 'Vient' ? `|N${r.n || 0}|Q${q}` : ''); return (guest ? guest.n : 'Lien général').slice(0, 119 - suf.length) + suf; };
 let ncount = 1;
-const nUpd = () => { const r = rget(), max = r && r.p ? r.p : (count + kids); ncount = Math.max(1, Math.min(max, ncount)); $('#nCnt').textContent = ncount; $('#nMinus').disabled = ncount <= 1; $('#nPlus').disabled = ncount >= max; };
-function navShow(r){ const c = $('#navCard'); if (!c) return; c.hidden = !(r && r.r === 'Vient'); $('#s4').classList.toggle('nav-on', !c.hidden); if (c.hidden) return; const nn = $('#nNote'); nn.hidden = !r.n; if (r.n) nn.textContent = `Transport réservé pour ${r.n} place${r.n > 1 ? 's' : ''}.` + (r.q ? ` Retour : ${r.q}.` : ''); ncount = r.n || r.p || 1; $('#nQ').value = r.q || ''; $('#nYes').textContent = r.n ? 'Modifier la réservation' : 'Réserver le transport'; $('#nNo').textContent = r.n ? 'Annuler le transport' : 'Pas besoin'; nUpd(); }
+const nUpd = window.__nUpd = () => { const max = count + kids; ncount = Math.max(1, Math.min(max, ncount)); $('#nCnt').textContent = ncount; $('#nMinus').disabled = ncount <= 1; $('#nPlus').disabled = ncount >= max; };
+function navShow(r, quiet){ const c = $('#navCard'); if (!c) return; c.hidden = !!(r && r.r !== 'Vient'); $('#s4').classList.toggle('nav-on', !c.hidden); if (c.hidden) return; r = r || {}; const nn = $('#nNote'); nn.hidden = !r.n || !!quiet; if (r.n) nn.textContent = `Transport réservé pour ${r.n} place${r.n > 1 ? 's' : ''}.` + (r.q ? ` Retour : ${r.q}.` : ''); ncount = r.n || (count + kids); $('#nQ').value = r.q || ''; $('#nYes').textContent = r.n ? 'Modifier la réservation' : 'Réserver le transport'; $('#nNo').textContent = r.n ? 'Annuler le transport' : 'Pas besoin'; nUpd(); }
 function nnote(t){ const n = $('#nNote'); n.hidden = false; n.textContent = t; }
 window.__rsvpInit = () => {
-  if (window.__preview || !window.__saveRsvp) return;
+  if (window.__preview || !window.__saveRsvp){ navShow(null); return; }
   const prev = rget(), closed = Date.now() >= DEADLINE;
   ['#stepper','#yes','#no','#howMany'].forEach(q => { $(q).style.display = closed ? 'none' : ''; });
   if (closed){ note((prev ? rtxt(prev) + ' ' : '') + 'Les réponses sont closes depuis le 30 octobre 2026. Pour toute question, appelez Tsidy ou Njara.'); return; }
   if (prev && prev.r === 'Vient' && prev.p) { count = prev.a ?? prev.p; kids = prev.e || 0; updateRsvp(); }
+  navShow(prev, true);
 };
 $('#nMinus').addEventListener('click', e => { e.stopPropagation(); ncount--; nUpd(); });
 $('#nPlus').addEventListener('click', e => { e.stopPropagation(); ncount++; nUpd(); });
@@ -603,10 +605,12 @@ $('#nPlus').addEventListener('click', e => { e.stopPropagation(); ncount++; nUpd
   e.stopPropagation();
   if (window.__preview || !window.__saveRsvp){ nnote('Aperçu : la réservation n’est pas enregistrée.'); return; }
   if (Date.now() >= DEADLINE){ window.__rsvpInit(); return; }
-  const prev = rget(); if (!prev || prev.r !== 'Vient' || window.__sending) return;
-  const r = { ...prev, n: id === 'nYes' ? ncount : 0, q: id === 'nYes' ? $('#nQ').value.trim().slice(0, 30) : '' };
+  if (window.__sending) return;
+  const p0 = rget(), prev = p0 && p0.r === 'Vient' && p0.a === count && (p0.e || 0) === kids ? p0 : null;
+  if (!prev && id === 'nNo'){ nnote('C’est noté, pas de transport pour vous.'); return; }
+  const r = { ...(prev || { r: 'Vient', a: count, e: kids, p: count + kids }), n: id === 'nYes' ? ncount : 0, q: id === 'nYes' ? $('#nQ').value.trim().slice(0, 30) : '' };
   if (id === 'nYes' && !r.q){ nnote('Veuillez indiquer votre quartier pour le retour.'); $('#nQ').focus(); return; }
-  if ((prev.n || 0) === r.n && (prev.q || '') === r.q){ nnote(r.n ? `Transport réservé pour ${r.n} place${r.n > 1 ? 's' : ''}.` : 'C’est noté, pas de transport pour vous.'); return; }
+  if (prev && (prev.n || 0) === r.n && (prev.q || '') === r.q){ nnote(r.n ? `Transport réservé pour ${r.n} place${r.n > 1 ? 's' : ''}.` : 'C’est noté, pas de transport pour vous.'); return; }
   window.__sending = true; nnote('Envoi…');
   window.__saveRsvp({ familyId: guest ? guest.id : '', famille: fenc(r), places: guest ? guest.s : 0, reponse: r.r, personnes: r.p, date: Date.now() })
     .then(() => { rset(r); note(rtxt(r) + MODIF); navShow(r); if (!r.n) nnote('C’est noté, pas de transport pour vous.'); })
@@ -618,7 +622,7 @@ $('#nPlus').addEventListener('click', e => { e.stopPropagation(); ncount++; nUpd
   setTimeout(() => { const pre = $('#rsvpPre'); if (pre) pre.hidden = true; }, 0);
   if (!window.__saveRsvp){ try { navigator.clipboard && navigator.clipboard.writeText($('#'+id).dataset.msg || ''); } catch(err){} note('Merci !' + MS); return; }
   e.preventDefault(); /* on reste sur la page pour afficher la navette */
-  if (window.__preview){ e.preventDefault(); note('Aperçu : la réponse n’est pas enregistrée.'); navShow(id === 'yes' ? { r: 'Vient', p: count + kids } : null); return; }
+  if (window.__preview){ e.preventDefault(); note('Aperçu : la réponse n’est pas enregistrée.'); navShow({ r: id === 'yes' ? 'Vient' : 'Ne vient pas', p: count + kids }); return; }
   if (Date.now() >= DEADLINE){ e.preventDefault(); window.__rsvpInit(); return; }
   const name = guest ? guest.n : 'Lien général';
   const r = { r: id==='yes' ? 'Vient' : 'Ne vient pas', a: id==='yes' ? count : 0, e: id==='yes' ? kids : 0 }; r.p = r.a + r.e;
