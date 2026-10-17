@@ -186,6 +186,18 @@ body{margin:0;background:var(--espresso);overflow:hidden;font-family:var(--serif
 .btn-ghost{background:transparent;color:var(--brown);border:2px solid rgba(107,74,47,.45)}
 .stepper button:focus-visible,.btn-main:focus-visible,.btn-ghost:focus-visible{outline:4px solid var(--caramel);outline-offset:6px}
 .rsvp-note{font:italic 44px/1.3 var(--serif);color:var(--espresso);max-width:760px}
+.navc{margin-top:10px;padding:30px 40px 34px;border:2px solid rgba(160,120,70,.45);border-radius:36px;background:rgba(255,250,240,.75);display:flex;flex-direction:column;align-items:center;gap:16px;max-width:820px;box-sizing:border-box}
+.navc[hidden]{display:none}
+.navc p{margin:0;font:italic 32px/1.3 var(--serif);color:var(--espresso)}
+.navc .stepper{gap:24px}.navc .stepper button{width:76px;height:76px;font-size:44px}.navc .stepper output{font-size:76px;min-width:80px}
+.navc input{font:30px var(--serif);padding:16px 24px;border:2px solid rgba(160,120,70,.45);border-radius:40px;background:#fffaf2;color:var(--espresso);width:640px;box-sizing:border-box;text-align:center}
+.navc .nbtn{display:flex;gap:16px}
+#s4 .navc .btn-main,#s4 .navc .btn-ghost{min-width:0;font-size:26px;padding:22px 34px}
+#s4 .navc .rsvp-note{font-size:32px}
+#s4.nav-on .cd,#s4.nav-on .cd-t{display:none}
+#s4.nav-on .rsvp-form{gap:12px;margin-top:18px}
+#s4.nav-on .contacts{margin-top:24px!important}
+#s4.nav-on .rsvp-note{font-size:32px}
 .gname{font:48px var(--serif);color:var(--espresso);background:rgba(255,253,249,.8);border:2px solid rgba(168,124,80,.5);border-radius:20px;padding:20px 30px;width:640px;text-align:center;box-sizing:border-box}
 .gname[hidden]{display:none}
 #back{position:absolute;top:70px;left:70px;z-index:40;font:500 28px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;background:var(--brown);color:var(--paper);border:0;border-radius:60px;padding:22px 36px;cursor:pointer}
@@ -242,7 +254,7 @@ body{margin:0;background:var(--espresso);overflow:hidden;font-family:var(--serif
 
   <!-- 0. film -->
   <section class="scene" id="s0">
-    <video id="film" playsinline webkit-playsinline preload="metadata" poster="../film.jpg?v=14"><source src="../film.mp4?v=14" type="video/mp4"></video>
+    <video id="film" playsinline webkit-playsinline preload="metadata" poster="../film.jpg?v=14"><source src="../film.mp4?v=15" type="video/mp4"></video>
     <button type="button" id="playBtn" hidden><span class="pb-i">▶</span><span class="pb-t">Touchez pour ouvrir<br>l’invitation</span></button>
     <button type="button" id="skipBtn">Passer ›</button>
     <button type="button" id="sndBtn" hidden>🔊&nbsp; Activer le son</button>
@@ -314,6 +326,15 @@ const run=()=>document.querySelectorAll('.flw[data-g]').forEach(e=>{if(!e.firstC
         <a class="btn-main" id="yes" target="_blank" rel="noopener" href="#">Je confirme ma présence</a>
         <a class="btn-ghost" id="no" target="_blank" rel="noopener" href="#">Je ne pourrai pas venir</a>
         <div class="rsvp-note" id="rsvpNote" hidden></div>
+        <div class="navc" id="navCard" hidden>
+          <div class="script" style="font-size:62px;line-height:1">Navette offerte</div>
+          <div class="kicker" style="font-size:26px;margin-top:6px">Église → Espace Fenitra</div>
+          <p>Aller : départ de l’Église Christ Roi Manjakaray à 11h vers l’Espace Fenitra.<br>Retour : organisé à la fin de la fête selon votre quartier.</p>
+          <div class="srow"><span class="slab">Places</span><div class="stepper"><button type="button" id="nMinus" aria-label="Une place de moins">−</button><output id="nCnt">1</output><button type="button" id="nPlus" aria-label="Une place de plus">+</button></div></div>
+          <input id="nQ" maxlength="30" placeholder="Votre quartier pour le retour (facultatif)" autocomplete="off">
+          <div class="nbtn"><button type="button" class="btn-main" id="nYes">Réserver la navette</button><button type="button" class="btn-ghost" id="nNo">Pas besoin</button></div>
+          <div class="rsvp-note" id="nNote" hidden></div>
+        </div>
       </div>
       <div class="contacts rv" style="--d:1.4s;margin-top:50px">
         <a href="tel:+261342217497"><span class="script" style="font-size:72px">Tsidy</span><span class="num">034 22 174 97</span></a>
@@ -420,6 +441,7 @@ html.mode-admin #wrap{display:none}
 .side ul,.tcard ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
 .side li,.tcard li{display:flex;justify-content:space-between;gap:8px;font-size:14px;padding:6px 8px;border-radius:8px;background:rgba(230,212,184,.35)}
 .stat{cursor:pointer;text-align:left;font:inherit;color:inherit}.stat:hover,.stat[aria-pressed="true"]{outline:2px solid var(--brown)}
+.stat.over{background:#f6d3cc;border-color:#c0392b}.stat.over b{color:#a52a1c}.navinfo{margin:4px 0 10px;font-size:15px}.navinfo.over{color:#a52a1c;font-weight:600}
 #detail{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:-6px 0 22px}
 #detail .dh{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}#detail h3{margin:0;font:600 22px var(--serif);color:var(--espresso);flex:1}
 #detail .tw{max-height:460px;overflow:auto}#detail table{width:100%;border-collapse:collapse;font:14px var(--sans)}#detail th,#detail td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}#detail th{position:sticky;top:0;background:var(--card);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--caramel)}
@@ -627,30 +649,53 @@ const rkey = () => 'rsvp_' + (guest ? (guest.id || guest.n) : 'general');
 const rget = () => { try { return JSON.parse(localStorage.getItem(rkey()) || 'null'); } catch(e){ return null; } };
 const rset = v => { try { localStorage.setItem(rkey(), JSON.stringify(v)); } catch(e){} };
 const ptxt = r => { const a = r.a ?? r.p, e = r.e || 0; return `${a} adulte${a > 1 ? 's' : ''}` + (e ? ` et ${e} enfant${e > 1 ? 's' : ''}` : ''); };
+const ntxt = r => r.r === 'Vient' && r.n ? ` Navette : ${r.n} place${r.n > 1 ? 's' : ''} réservée${r.n > 1 ? 's' : ''}, départ de l’église à 11h.` : '';
 const rtxt = r => r.r === 'Vient' ? `Votre réponse est enregistrée, vous venez à ${ptxt(r)}.` : 'Votre réponse est enregistrée, vous ne pourrez pas venir.';
+const fenc = r => { const q = String(r.q || '').replace(/[|\n\r]/g, ' ').trim().slice(0, 30); const suf = ` |A${r.a}|E${r.e}` + (r.r === 'Vient' ? `|N${r.n || 0}|Q${q}` : ''); return (guest ? guest.n : 'Lien général').slice(0, 119 - suf.length) + suf; };
+let ncount = 1;
+const nUpd = () => { const r = rget(), max = r && r.p ? r.p : (count + kids); ncount = Math.max(1, Math.min(max, ncount)); $('#nCnt').textContent = ncount; $('#nMinus').disabled = ncount <= 1; $('#nPlus').disabled = ncount >= max; };
+function navShow(r){ const c = $('#navCard'); if (!c) return; c.hidden = !(r && r.r === 'Vient'); $('#s4').classList.toggle('nav-on', !c.hidden); if (c.hidden) return; const nn = $('#nNote'); nn.hidden = !r.n; if (r.n) nn.textContent = `Navette réservée pour ${r.n} place${r.n > 1 ? 's' : ''}.` + (r.q ? ` Retour : ${r.q}.` : ''); ncount = r.n || r.p || 1; $('#nQ').value = r.q || ''; $('#nYes').textContent = r.n ? 'Modifier la réservation' : 'Réserver la navette'; $('#nNo').textContent = r.n ? 'Annuler la navette' : 'Pas besoin'; nUpd(); }
+function nnote(t){ const n = $('#nNote'); n.hidden = false; n.textContent = t; }
 window.__rsvpInit = () => {
   if (window.__preview || !window.__saveRsvp) return;
   const prev = rget(), closed = Date.now() >= DEADLINE;
   ['#stepper','#yes','#no','#howMany'].forEach(q => { $(q).style.display = closed ? 'none' : ''; });
   if (closed){ note((prev ? rtxt(prev) + ' ' : '') + 'Les réponses sont closes depuis le 30 octobre 2026. Pour toute question, appelez Tsidy ou Njara.'); return; }
   if (prev){ if (prev.r === 'Vient' && prev.p) { count = prev.a ?? prev.p; kids = prev.e || 0; updateRsvp(); } note(rtxt(prev) + MODIF); $('#rsvpPre').hidden = true; }
+  navShow(prev);
 };
+$('#nMinus').addEventListener('click', e => { e.stopPropagation(); ncount--; nUpd(); });
+$('#nPlus').addEventListener('click', e => { e.stopPropagation(); ncount++; nUpd(); });
+['nYes','nNo'].forEach(id => $('#'+id).addEventListener('click', e => {
+  e.stopPropagation();
+  if (window.__preview || !window.__saveRsvp){ nnote('Aperçu : la réservation n’est pas enregistrée.'); return; }
+  if (Date.now() >= DEADLINE){ window.__rsvpInit(); return; }
+  const prev = rget(); if (!prev || prev.r !== 'Vient' || window.__sending) return;
+  const r = { ...prev, n: id === 'nYes' ? ncount : 0, q: id === 'nYes' ? $('#nQ').value.trim().slice(0, 30) : '' };
+  if ((prev.n || 0) === r.n && (prev.q || '') === r.q){ nnote(r.n ? `Navette réservée pour ${r.n} place${r.n > 1 ? 's' : ''}.` : 'C’est noté, pas de navette pour vous.'); return; }
+  window.__sending = true; nnote('Envoi…');
+  window.__saveRsvp({ familyId: guest ? guest.id : '', famille: fenc(r), places: guest ? guest.s : 0, reponse: r.r, personnes: r.p, date: Date.now() })
+    .then(() => { rset(r); note(rtxt(r) + MODIF); navShow(r); if (!r.n) nnote('C’est noté, pas de navette pour vous.'); })
+    .catch(() => nnote('L’envoi a échoué. Vérifiez votre connexion et réessayez.'))
+    .finally(() => { window.__sending = false; });
+}));
 ['yes','no'].forEach(id => $('#'+id).addEventListener('click', e => {
   const MS = ' Votre message est copié : collez-le dans Messenger et envoyez-le.';
   setTimeout(() => { const pre = $('#rsvpPre'); if (pre) pre.hidden = true; }, 0);
   try { navigator.clipboard && navigator.clipboard.writeText($('#'+id).dataset.msg || ''); } catch(err){}
   if (!window.__saveRsvp){ note('Merci !' + MS); return; }
-  if (window.__preview){ e.preventDefault(); note('Aperçu : la réponse n’est pas enregistrée.'); return; }
+  if (window.__preview){ e.preventDefault(); note('Aperçu : la réponse n’est pas enregistrée.'); navShow(id === 'yes' ? { r: 'Vient', p: count + kids } : null); return; }
   if (Date.now() >= DEADLINE){ e.preventDefault(); window.__rsvpInit(); return; }
   const name = guest ? guest.n : 'Lien général';
   const r = { r: id==='yes' ? 'Vient' : 'Ne vient pas', a: id==='yes' ? count : 0, e: id==='yes' ? kids : 0 }; r.p = r.a + r.e;
   const prev = rget();
+  if (r.r === 'Vient' && prev && prev.r === 'Vient' && prev.n){ r.n = Math.min(prev.n, r.p); r.q = prev.q || ''; }
   const thanks = rtxt(r) + MODIF;
   if (window.__sending) return;
-  if (prev && prev.r === r.r && prev.p === r.p && (prev.e || 0) === r.e){ note(thanks); return; }
+  if (prev && prev.r === r.r && prev.p === r.p && (prev.e || 0) === r.e && (prev.n || 0) === (r.n || 0)){ note(thanks); navShow(r); return; }
   window.__sending = true; note('Envoi de votre réponse…');
-  window.__saveRsvp({ familyId: guest ? guest.id : '', famille: name.slice(0,100) + ` |A${r.a}|E${r.e}`, places: guest ? guest.s : 0, reponse: r.r, personnes: r.p, date: Date.now() })
-    .then(() => { rset(r); note(thanks); })
+  window.__saveRsvp({ familyId: guest ? guest.id : '', famille: fenc(r), places: guest ? guest.s : 0, reponse: r.r, personnes: r.p, date: Date.now() })
+    .then(() => { rset(r); note(thanks); navShow(r); })
     .catch(() => note(Date.now() >= DEADLINE ? 'Les réponses sont closes depuis le 30 octobre 2026.' : 'L’envoi a échoué. Vérifiez votre connexion et réessayez, ou appelez Tsidy ou Njara.'))
     .finally(() => { window.__sending = false; });
 }));
@@ -727,8 +772,8 @@ const fdoc = id => db.collection('families').doc(id);
 async function save(ref, data){ try { await ref.update(data); } catch(e){ toast('Modification refusée : ' + (e.message||e.code)); } }
 
 function render(){
-  const tot = families.reduce((a,f)=>{ a.seats+=f.seats||0; if(f.status==='oui'){a.oui+=f.coming??f.seats; a.fo++;} else if(f.status==='non'){a.non+=f.seats||0;} else a.wait++; a.plan+=heads(f); return a; }, {seats:0,oui:0,fo:0,non:0,wait:0,plan:0});
-  $('#stats').innerHTML = [[families.length,'Familles','all'],[tot.seats,'Places invitées','all'],[tot.oui,'Personnes confirmées','oui'],[tot.wait,'Familles sans réponse','wait'],[tot.non,'Places déclinées','non'],[tot.plan,'Total prévu','plan']].map(([n,l,k])=>`<button type="button" class="stat" data-st="${k}" data-l="${l}" aria-pressed="${detailKey===l}"><b>${n}</b><span>${l}</span></button>`).join('');
+  const tot = families.reduce((a,f)=>{ a.seats+=f.seats||0; if(f.status==='oui'){a.oui+=f.coming??f.seats; a.fo++;} else if(f.status==='non'){a.non+=f.seats||0;} else a.wait++; a.plan+=heads(f); if(f.status==='oui') a.nav+=f.navette||0; return a; }, {seats:0,oui:0,fo:0,non:0,wait:0,plan:0,nav:0});
+  $('#stats').innerHTML = [[families.length,'Familles','all'],[tot.seats,'Places invitées','all'],[tot.oui,'Personnes confirmées','oui'],[tot.wait,'Familles sans réponse','wait'],[tot.non,'Places déclinées','non'],[tot.plan,'Total prévu','plan'],[`${tot.nav} / ${navCap()}`,'Navette','nav']].map(([n,l,k])=>`<button type="button" class="stat${k==='nav' && tot.nav>navCap() ? ' over' : ''}" data-st="${k}" data-l="${l}" aria-pressed="${detailKey===l}"><b>${n}</b><span>${l}</span></button>`).join('');
   renderDetail();
   const fct = $('#fCat').value, cl = allCats().concat(families.some(f=>!f.cat) ? [''] : []);
   $('#sides').innerHTML = cl.map(k => { const l = families.filter(f => (f.cat||'')===k);
@@ -978,17 +1023,20 @@ $('#iGo').addEventListener('click', async () => {
 
 /* tables */
 let detailKey = '';
-const STF = { all: f => true, oui: f => f.status==='oui', wait: f => f.status!=='oui' && f.status!=='non', non: f => f.status==='non', plan: f => f.status!=='non' };
+const STF = { all: f => true, oui: f => f.status==='oui', wait: f => f.status!=='oui' && f.status!=='non', non: f => f.status==='non', plan: f => f.status!=='non', nav: f => f.status==='oui' && f.navette > 0 };
+const navCap = () => { try { return parseInt(localStorage.getItem('navCap'),10) || 28; } catch(e){ return 28; } };
 const tablesOf = f => tables.filter(t => atT(f, t.id) > 0).map(t => t.name + (atT(f, t.id) < heads(f) ? ` (${atT(f, t.id)})` : '')).join(', ');
 const LAB = {attente:'En attente', oui:'Vient', non:'Ne vient pas'};
 function detailRows(){ const b = $('#stats').querySelector(`[data-l="${detailKey}"]`); const k = b ? b.dataset.st : 'all';
-  return families.filter(STF[k]).sort((a,b)=>(a.cat||'').localeCompare(b.cat||'') || a.name.localeCompare(b.name)).map(f => ({ 'Famille':f.name, 'Catégorie':f.cat||'', 'Table':tablesOf(f), 'Adultes':f.adults ?? '', 'Enfants':f.kids ?? '', 'Places invitées':f.seats, 'Réponse':LAB[f.status||'attente'], 'Personnes prévues':heads(f), 'Téléphone':f.phone||'' })); }
+  return families.filter(STF[k]).sort((a,b)=>(a.cat||'').localeCompare(b.cat||'') || a.name.localeCompare(b.name)).map(f => ({ 'Famille':f.name, 'Catégorie':f.cat||'', 'Table':tablesOf(f), 'Adultes':f.adults ?? '', 'Enfants':f.kids ?? '', 'Places invitées':f.seats, 'Réponse':LAB[f.status||'attente'], 'Personnes prévues':heads(f), 'Navette':f.status==='oui' && f.navette ? f.navette : '', 'Quartier retour':f.status==='oui' && f.navette ? (f.quartier||'') : '', 'Téléphone':f.phone||'' })); }
 function renderDetail(){ const d = $('#detail'); if (!detailKey){ d.hidden = true; return; } d.hidden = false; const R = detailRows(), cols = R.length ? Object.keys(R[0]) : [];
-  d.innerHTML = `<div class="dh"><h3>${esc(detailKey)} · ${R.length} famille${R.length>1?'s':''}, ${R.reduce((a,r)=>a+(+r['Personnes prévues']||0),0)} personnes prévues</h3><button class="a-btn sec" type="button" id="dExp">Exporter en Excel</button><button class="a-btn sec" type="button" id="dClose">Fermer</button></div>`
+  d.innerHTML = `<div class="dh"><h3>${esc(detailKey)} · ${R.length} famille${R.length>1?'s':''}, ${R.reduce((a,r)=>a+(+r['Personnes prévues']||0),0)} personnes prévues</h3>${detailKey==='Navette' ? `<button class="a-btn sec" type="button" id="dCap">Places dans la navette : ${navCap()}</button>` : ''}<button class="a-btn sec" type="button" id="dExp">Exporter en Excel</button><button class="a-btn sec" type="button" id="dClose">Fermer</button></div>`
+   + (detailKey==='Navette' ? (()=>{ const n = families.filter(STF.nav).reduce((a,f)=>a+f.navette,0), c = navCap(); return `<p class="navinfo${n>c?' over':''}">${n} place${n>1?'s':''} réservée${n>1?'s':''} sur ${c}${n>c ? ` : ${n-c} de trop, prévoir une autre voiture` : ` : ${c-n} libre${c-n>1?'s':''}`}. Départ de l’église à 11h vers l’Espace Fenitra.</p>`; })() : '')
    + (R.length ? `<div class="tw"><table><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr>${R.map(r=>`<tr>${cols.map(c=>`<td>${esc(String(r[c]))}</td>`).join('')}</tr>`).join('')}</table></div>` : '<p>Aucune famille.</p>'); }
 $('#stats').addEventListener('click', e => { const b = e.target.closest('[data-l]'); if (!b) return; detailKey = detailKey===b.dataset.l ? '' : b.dataset.l; render(); });
 $('#detail').addEventListener('click', async e => {
   if (e.target.id==='dClose'){ detailKey=''; render(); }
+  if (e.target.id==='dCap'){ const v = prompt('Nombre de places dans la navette', navCap()); if (v === null) return; const n = parseInt(v,10); if (n > 0){ try { localStorage.setItem('navCap', n); } catch(err){} render(); } }
   if (e.target.id==='dExp'){ if (!window.XLSX || !downloads) return; const R = detailRows(); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(R.length ? R : [{Famille:''}]), detailKey.slice(0,30));
     const out = XLSX.write(wb, { bookType:'xlsx', type:'array' }); try { await downloads.save({ filename:`${norm(detailKey).replace(/[^a-z0-9]+/g,'-')}.xlsx`, data: new Blob([out], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}) }); } catch(err){} }
 });
@@ -1107,21 +1155,21 @@ const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 let started = false;
 function watchResponses() {
   onSnapshot(collection(fs, 'reponses'), s => {
-    const all = s.docs.map(d => { const x = { ref: d.ref, ...d.data() }; const m = String(x.famille || '').match(/ \|A(\d+)\|E(\d+)$/); if (m) { x.adultes = +m[1]; x.enfants = +m[2]; x.famille = x.famille.slice(0, m.index); } return x; }).sort((a, b) => (b.date || 0) - (a.date || 0));
+    const all = s.docs.map(d => { const x = { ref: d.ref, ...d.data() }; const m = String(x.famille || '').match(/ \|A(\d+)\|E(\d+)(?:\|N(\d+)\|Q([^|]*))?$/); if (m) { x.adultes = +m[1]; x.enfants = +m[2]; x.navette = m[3] != null ? +m[3] : 0; x.quartier = m[4] || ''; x.famille = x.famille.slice(0, m.index); } return x; }).sort((a, b) => (b.date || 0) - (a.date || 0));
     const latest = {};
     all.forEach(r => { if (r.familyId && !latest[r.familyId]) latest[r.familyId] = r; });
     Object.values(latest).forEach(r => {
       const fam = all.filter(x => x.familyId === r.familyId && !x.applied);
       if (!fam.length) return;
       const ops = fam.map(x => updateDoc(x.ref, { applied: true }));
-      ops.push(updateDoc(doc(fs, 'families', r.familyId), { status: r.reponse === 'Vient' ? 'oui' : 'non', coming: r.reponse === 'Vient' ? r.personnes : null, adultes: r.reponse === 'Vient' ? (r.adultes ?? r.personnes) : null, enfants: r.reponse === 'Vient' ? (r.enfants || 0) : null, sent: true, respAt: r.date }));
+      ops.push(updateDoc(doc(fs, 'families', r.familyId), { status: r.reponse === 'Vient' ? 'oui' : 'non', coming: r.reponse === 'Vient' ? r.personnes : null, adultes: r.reponse === 'Vient' ? (r.adultes ?? r.personnes) : null, enfants: r.reponse === 'Vient' ? (r.enfants || 0) : null, navette: r.reponse === 'Vient' ? (r.navette || 0) : 0, quartier: r.reponse === 'Vient' ? (r.quartier || '') : '', sent: true, respAt: r.date }));
       Promise.all(ops).catch(() => {});
     });
     all.filter(r => !r.familyId && !r.applied).forEach(r => updateDoc(r.ref, { applied: true }).catch(() => {}));
     all.filter(r => r.familyId && latest[r.familyId] !== r).forEach(r => deleteDoc(r.ref).catch(() => {}));
     const shown = all.filter(r => !r.familyId || latest[r.familyId] === r);
     const box = $('#lastResp'); box.hidden = !all.length;
-    const ptx = r => r.reponse === 'Vient' ? 'Vient · ' + (r.adultes ?? r.personnes) + ' adulte' + ((r.adultes ?? r.personnes) > 1 ? 's' : '') + (r.enfants ? ', ' + r.enfants + ' enfant' + (r.enfants > 1 ? 's' : '') : '') : 'Ne vient pas';
+    const ptx = r => r.reponse === 'Vient' ? 'Vient · ' + (r.adultes ?? r.personnes) + ' adulte' + ((r.adultes ?? r.personnes) > 1 ? 's' : '') + (r.enfants ? ', ' + r.enfants + ' enfant' + (r.enfants > 1 ? 's' : '') : '') + (r.navette ? ' · navette ' + r.navette + (r.quartier ? ' (' + esc(r.quartier) + ')' : '') : '') : 'Ne vient pas';
     const when = r => new Date(r.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
     box.hidden = !shown.length;
     box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Dernières réponses</h3><button class="a-btn sm sec" type="button" id="hClear">Effacer l’historique</button></div><p style="margin:6px 0 8px;font-size:13px;opacity:.75">Seule la dernière réponse de chaque famille est gardée. Effacer l’historique ne change pas les réponses déjà notées sur les familles.</p><ul>' + shown.slice(0, 60).map((r, i) => `<li><span>${esc(r.famille)}${r.familyId ? '' : ' (lien général)'}</span><span>${ptx(r)} · ${when(r)} <button class="a-btn sm sec" type="button" data-rmod="${i}">Modifier</button> <button class="a-btn sm sec" type="button" data-rdel="${i}" style="color:#a33">Effacer</button></span></li>`).join('') + '</ul>';
@@ -1132,12 +1180,14 @@ function watchResponses() {
         const a = prompt(`Réponse de ${r.famille} : nombre d’adultes (0 = ne vient pas)`, a0); if (a === null) return;
         const k = parseInt(a, 10) > 0 ? prompt(`Nombre d’enfants pour ${r.famille}`, e0) : '0'; if (k === null) return;
         const na = Math.max(0, parseInt(a, 10) || 0), ne = Math.max(0, parseInt(k, 10) || 0), vient = na + ne > 0;
-        try { await updateDoc(r.ref, { famille: r.famille + ` |A${na}|E${ne}`, personnes: na + ne, reponse: vient ? 'Vient' : 'Ne vient pas', applied: true });
-          if (r.familyId) await updateDoc(doc(fs, 'families', r.familyId), { status: vient ? 'oui' : 'non', coming: vient ? na + ne : null, adultes: vient ? na : null, enfants: vient ? ne : null }); }
+        const nv = vient ? prompt(`Places dans la navette pour ${r.famille} (0 = pas de navette)`, Math.min(r.navette || 0, na + ne)) : '0'; if (nv === null) return;
+        const nn = vient ? Math.max(0, Math.min(na + ne, parseInt(nv, 10) || 0)) : 0, nq = nn ? (r.quartier || '') : '';
+        try { await updateDoc(r.ref, { famille: r.famille + ` |A${na}|E${ne}` + (vient ? `|N${nn}|Q${nq}` : ''), personnes: na + ne, reponse: vient ? 'Vient' : 'Ne vient pas', applied: true });
+          if (r.familyId) await updateDoc(doc(fs, 'families', r.familyId), { status: vient ? 'oui' : 'non', coming: vient ? na + ne : null, adultes: vient ? na : null, enfants: vient ? ne : null, navette: nn, quartier: nq }); }
         catch (err) { alert('Modification refusée : ' + (err.code || err.message)); } }
       if (bd) { const r = shown[+bd.dataset.rdel]; if (!r) return;
         if (!confirm(`Effacer la réponse de ${r.famille} ? La famille repassera « En attente ».`)) return;
-        try { await deleteDoc(r.ref); if (r.familyId) await updateDoc(doc(fs, 'families', r.familyId), { status: 'attente', coming: null, adultes: null, enfants: null }); }
+        try { await deleteDoc(r.ref); if (r.familyId) await updateDoc(doc(fs, 'families', r.familyId), { status: 'attente', coming: null, adultes: null, enfants: null, navette: 0, quartier: '' }); }
         catch (err) { alert('Suppression refusée : ' + (err.code || err.message)); } }
     };
     $('#hClear').onclick = async () => { if (!confirm('Effacer tout l’historique des réponses ? Les réponses déjà notées sur chaque famille restent.')) return; await Promise.all(all.map(r => deleteDoc(r.ref).catch(() => {}))); };
