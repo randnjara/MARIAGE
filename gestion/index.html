@@ -1164,19 +1164,29 @@ const dl = { save: async ({ filename, data }) => { const u = URL.createObjectURL
 window.__api = { use: async n => n === 'db' ? dbx : n === 'downloads' ? dl : null };
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let started = false;
+let FAMS = null;
+const nName = v => String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/\s+/g, ' ').trim();
+// reporte la dernière réponse de chaque famille sur sa fiche ; si la famille a été réimportée (nouvel identifiant), on la retrouve par son nom
+function applyResp() {
+  if (!FAMS || !window.__RESP) return;
+  for (const r of window.__RESP) {
+    let tid = FAMS[r.familyId] ? r.familyId : null;
+    if (!tid) { const hits = Object.entries(FAMS).filter(([, f]) => nName(f.name) === nName(r.famille)); if (hits.length === 1) tid = hits[0][0]; }
+    if (!tid || FAMS[tid].respAt === r.date) continue;
+    const v = r.reponse === 'Vient';
+    FAMS[tid] = { ...FAMS[tid], respAt: r.date };
+    updateDoc(doc(fs, 'families', tid), { status: v ? 'oui' : 'non', coming: v ? r.personnes : null, adultes: v ? (r.adultes ?? r.personnes) : null, enfants: v ? (r.enfants || 0) : null, navette: v ? (r.navette || 0) : 0, quartier: v ? (r.quartier || '') : '', sent: true, respAt: r.date }).catch(() => {});
+    if (tid !== r.familyId) updateDoc(r.ref, { familyId: tid, applied: true }).catch(() => {});
+    else if (!r.applied) updateDoc(r.ref, { applied: true }).catch(() => {});
+  }
+}
 function watchResponses() {
+  onSnapshot(collection(fs, 'families'), s => { FAMS = Object.fromEntries(s.docs.map(d => [d.id, d.data()])); applyResp(); });
   onSnapshot(collection(fs, 'reponses'), s => {
     const all = s.docs.map(d => { const x = { ref: d.ref, ...d.data() }; const m = String(x.famille || '').match(/ \|A(\d+)\|E(\d+)(?:\|N(\d+)\|Q([^|]*))?$/); if (m) { x.adultes = +m[1]; x.enfants = +m[2]; x.navette = m[3] != null ? +m[3] : 0; x.quartier = m[4] || ''; x.famille = x.famille.slice(0, m.index); } return x; }).sort((a, b) => (b.date || 0) - (a.date || 0));
     const latest = {};
     all.forEach(r => { if (r.familyId && !latest[r.familyId]) latest[r.familyId] = r; });
-    Object.values(latest).forEach(r => {
-      const fam = all.filter(x => x.familyId === r.familyId && !x.applied);
-      if (!fam.length) return;
-      const ops = fam.map(x => updateDoc(x.ref, { applied: true }));
-      ops.push(updateDoc(doc(fs, 'families', r.familyId), { status: r.reponse === 'Vient' ? 'oui' : 'non', coming: r.reponse === 'Vient' ? r.personnes : null, adultes: r.reponse === 'Vient' ? (r.adultes ?? r.personnes) : null, enfants: r.reponse === 'Vient' ? (r.enfants || 0) : null, navette: r.reponse === 'Vient' ? (r.navette || 0) : 0, quartier: r.reponse === 'Vient' ? (r.quartier || '') : '', sent: true, respAt: r.date }));
-      Promise.all(ops).catch(() => {});
-    });
-    Object.values(latest).forEach(r => { if (r.applied && !r.nav2 && r.reponse === 'Vient') Promise.all([updateDoc(doc(fs, 'families', r.familyId), { navette: r.navette || 0, quartier: r.quartier || '' }), updateDoc(r.ref, { nav2: true })]).catch(() => {}); });
+    window.__RESP = Object.values(latest); applyResp();
     all.filter(r => !r.familyId && !r.applied).forEach(r => updateDoc(r.ref, { applied: true }).catch(() => {}));
     all.filter(r => r.familyId && latest[r.familyId] !== r).forEach(r => deleteDoc(r.ref).catch(() => {}));
     const shown = all.filter(r => !r.familyId || latest[r.familyId] === r);
