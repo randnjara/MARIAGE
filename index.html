@@ -322,6 +322,7 @@ const G={
  bottom:()=>`<svg viewBox="-350 -115 700 230">${D}<g class="sw">${L(-80,10,160,170,'flG')}${L(80,10,160,10,'flG')}${L(-200,0,140,190,'flD')}${L(200,0,140,-10,'flD')}${S(-230,10,120,175)}${S(230,10,120,5)}${F(-130,10,58,'fgW',12)}${F(130,10,58,'fgD',-12)}${F(0,0,66,'fgB',0)}</g></svg>`,
  corner:()=>`<svg viewBox="0 0 420 420">${D}<g class="sw">${L(40,40,230,8,'flG')}${L(40,40,230,82,'flG')}${L(40,40,180,45,'flD')}${S(40,40,220,25)}${S(40,40,220,65)}${L(150,60,120,-20,'flD')}${L(60,150,120,110,'flD')}${F(170,70,48,'fgB',20)}${F(70,170,48,'fgW',-10)}${F(70,70,62,'fgD',0)}${F(130,130,40,'fgW',30)}</g></svg>`,
  small:()=>`<svg viewBox="0 0 300 300">${D}<g class="sw">${L(260,40,170,170,'flG')}${L(260,40,170,100,'flG')}${L(260,40,130,135,'flD')}${S(260,40,170,150)}${S(260,40,170,120)}${F(180,70,40,'fgW',10)}${F(230,120,34,'fgB',-15)}${F(240,55,46,'fgD',0)}</g></svg>`};
+window.__G=G;
 const run=()=>document.querySelectorAll('.flw[data-g]').forEach(e=>{if(!e.firstChild)e.innerHTML=G[e.dataset.g]()});run();document.addEventListener('DOMContentLoaded',run);
 })();
 </script>

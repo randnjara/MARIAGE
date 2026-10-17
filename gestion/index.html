@@ -322,6 +322,7 @@ const G={
  bottom:()=>`<svg viewBox="-350 -115 700 230">${D}<g class="sw">${L(-80,10,160,170,'flG')}${L(80,10,160,10,'flG')}${L(-200,0,140,190,'flD')}${L(200,0,140,-10,'flD')}${S(-230,10,120,175)}${S(230,10,120,5)}${F(-130,10,58,'fgW',12)}${F(130,10,58,'fgD',-12)}${F(0,0,66,'fgB',0)}</g></svg>`,
  corner:()=>`<svg viewBox="0 0 420 420">${D}<g class="sw">${L(40,40,230,8,'flG')}${L(40,40,230,82,'flG')}${L(40,40,180,45,'flD')}${S(40,40,220,25)}${S(40,40,220,65)}${L(150,60,120,-20,'flD')}${L(60,150,120,110,'flD')}${F(170,70,48,'fgB',20)}${F(70,170,48,'fgW',-10)}${F(70,70,62,'fgD',0)}${F(130,130,40,'fgW',30)}</g></svg>`,
  small:()=>`<svg viewBox="0 0 300 300">${D}<g class="sw">${L(260,40,170,170,'flG')}${L(260,40,170,100,'flG')}${L(260,40,130,135,'flD')}${S(260,40,170,150)}${S(260,40,170,120)}${F(180,70,40,'fgW',10)}${F(230,120,34,'fgB',-15)}${F(240,55,46,'fgD',0)}</g></svg>`};
+window.__G=G;
 const run=()=>document.querySelectorAll('.flw[data-g]').forEach(e=>{if(!e.firstChild)e.innerHTML=G[e.dataset.g]()});run();document.addEventListener('DOMContentLoaded',run);
 })();
 </script>
@@ -526,7 +527,7 @@ html.mode-admin #wrap{display:none}
       <input id="tName" placeholder="Nom de la table (ex. Table Antsirabe)" aria-label="Nom de la table" style="flex:1 1 220px">
       <input id="tCap" type="number" min="1" value="10" aria-label="Places" style="width:80px">
       <button class="a-btn" type="button" id="tAdd">Ajouter la table</button>
-      <button class="a-btn sec" type="button" id="tAuto">Placer automatiquement</button>
+      <button class="a-btn sec" type="button" id="tAuto">Placer automatiquement</button><button class="a-btn sec" type="button" id="tCards">Cartes de table à imprimer</button>
     </div>
     <div class="tables-wrap"><aside class="side" id="unassigned"></aside><div class="grid" id="tGrid"></div></div>
   </section>
@@ -1130,6 +1131,33 @@ function renderTables(){
   </article>`; }).join('');
 }
 const tdoc = id => db.collection('tables').doc(id);
+$('#tCards').addEventListener('click', () => {
+  if (!tables.length) return toast('Aucune table à imprimer');
+  const w = window.open('', '_blank'); if (!w) return toast('Autorisez les fenêtres pour imprimer');
+  const G = window.__G || {}, top = G.top ? G.top() : '', bot = G.bottom ? G.bottom() : '';
+  const fonts = [...document.querySelectorAll('style')].map(s => s.textContent).filter(t => t.includes('@font-face')).join('\n');
+  const orn = `<svg class="orn" viewBox="0 0 240 30"><path d="M8 15H92M148 15H232" stroke="#b8925f" stroke-width="1.2"/><circle cx="96" cy="15" r="2.4" fill="#b8925f"/><circle cx="144" cy="15" r="2.4" fill="#b8925f"/><path d="M120 26C108 18 104 13 104 9a6.5 6.5 0 0 1 16-2 6.5 6.5 0 0 1 16 2c0 4-4 9-16 17z" fill="none" stroke="#6b4a2f" stroke-width="1.4"/><path d="M120 8v12M115 12.5h10" stroke="#b8925f" stroke-width="1.6"/></svg>`;
+  const cards = tables.map(t => { const fs = atTable(t.id); const n = fs.length; const sz = n > 14 ? 14 : n > 11 ? 16 : n > 8 ? 18 : 21;
+    const m = /^\s*table\s+(.+)$/i.exec(t.name || ''), big = m ? m[1] : (t.name || ''), isNum = /^\d{1,3}$/.test(big);
+    const title = `<div class="tt">${m ? '<span class="tw">Table</span>' : ''}<span class="tn${isNum ? ' num' : ''}${big.length > 12 ? ' long' : ''}">${esc(big)}</span></div>`;
+    return `<section class="card"><div class="frame"></div><div class="g top">${top}</div>${title}${orn}<ul style="font-size:${sz}pt">${fs.map(([f,k]) => `<li>${esc(f.name)}${k>1?` <small>(${k})</small>`:''}</li>`).join('') || '<li>&nbsp;</li>'}</ul>${orn}<div class="foot"><b>Tsidy &amp; Njara</b>Noces d’Étain · Baptême de Mihaja Kaël<br>7 novembre 2026</div><div class="g bot">${bot}</div></section>`; }).join('');
+  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Cartes de table</title><style>${fonts}
+@page{size:A4 landscape;margin:0}*{box-sizing:border-box}body{margin:0;background:#eee}
+.sheet{width:297mm;height:210mm;display:flex;background:#fff;page-break-after:always;break-after:page;margin:0 auto 8mm}
+.card{width:99mm;height:210mm;position:relative;overflow:hidden;border-right:.2mm dashed #ccc;display:flex;flex-direction:column;align-items:center;background:#fffdf9;color:#6b4a2f}
+.card:last-child{border-right:0}.frame{position:absolute;inset:7mm;border:.5mm solid #c9a978;outline:.25mm solid #c9a978;outline-offset:1.2mm;border-radius:46mm 46mm 4mm 4mm;pointer-events:none}
+.g{width:112%;margin:0 -6%;flex:none;position:relative;z-index:1}.g svg{width:100%;height:auto;display:block}.g.top{margin-top:-9mm}.g.bot{margin-top:auto;margin-bottom:-6mm}
+.tt{display:flex;flex-direction:column;align-items:center;margin-top:1mm;line-height:1;text-align:center;padding:0 9mm}
+.tw{font:400 30pt 'Great Vibes',cursive;color:#a87c50;margin-bottom:-2mm}
+.tn{font:400 52pt 'Great Vibes',cursive;color:#6b4a2f}.tn.long{font-size:38pt}.tn.num{font:600 66pt 'Cormorant Garamond',Georgia,serif;color:#6b4a2f;letter-spacing:.02em;font-variant-numeric:lining-nums;font-feature-settings:'lnum'}
+.orn{width:52mm;height:auto;margin:3mm 0;flex:none}
+ul{list-style:none;margin:auto 0;padding:0 12mm;font-variant-numeric:lining-nums;text-align:center;font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;color:#3a271d;line-height:1.3}li{margin:.6mm 0}
+.foot{text-align:center;font:500 9.5pt 'Cormorant Garamond',Georgia,serif;color:#a87c50;line-height:1.35;margin-bottom:1mm}.foot b{display:block;font:400 19pt 'Great Vibes',cursive;color:#6b4a2f}
+small{font-size:.7em;color:#a87c50}.bar{text-align:center;font:14px sans-serif;padding:10px}
+@media print{body{background:#fff}.sheet{margin:0}.bar{display:none}}</style></head><body><div class="bar"><button onclick="print()" style="font-size:16px;padding:8px 16px">Imprimer</button> 3 cartes par feuille A4 paysage, à découper selon les pointillés.</div>
+${(() => { const c = cards.split('</section>').filter(Boolean).map(x => x + '</section>'); let o=''; for (let i=0;i<c.length;i+=3) o += `<div class="sheet">${c.slice(i,i+3).join('')}</div>`; return o; })()}</body></html>`);
+  w.document.close();
+});
 $('#tAdd').addEventListener('click', async () => {
   if (!db) return toast('Gestion indisponible');
   const name = $('#tName').value.trim() || `Table ${tables.length+1}`;
