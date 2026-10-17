@@ -683,7 +683,6 @@ $('#nPlus').addEventListener('click', e => { e.stopPropagation(); ncount++; nUpd
   if (!prev && id === 'nNo'){ nnote('C’est noté, pas de transport pour vous.'); return; }
   const r = { ...(prev || { r: 'Vient', a: count, e: kids, p: count + kids }), n: id === 'nYes' ? ncount : 0, q: id === 'nYes' ? $('#nQ').value.trim().slice(0, 30) : '' };
   if (id === 'nYes' && !r.q){ nnote('Veuillez indiquer votre quartier pour le retour.'); $('#nQ').focus(); return; }
-  if (prev && (prev.n || 0) === r.n && (prev.q || '') === r.q){ nnote(r.n ? `Transport réservé pour ${r.n} place${r.n > 1 ? 's' : ''}.` : 'C’est noté, pas de transport pour vous.'); return; }
   window.__sending = true; nnote('Envoi…');
   window.__saveRsvp({ familyId: guest ? guest.id : '', famille: fenc(r), places: guest ? guest.s : 0, reponse: r.r, personnes: r.p, date: Date.now() })
     .then(() => { rset(r); note(rtxt(r) + MODIF); $('#rsvpPre').hidden = true; navShow(r); if (!r.n) nnote('C’est noté, pas de transport pour vous.'); })
@@ -703,7 +702,6 @@ $('#nPlus').addEventListener('click', e => { e.stopPropagation(); ncount++; nUpd
   if (r.r === 'Vient' && prev && prev.r === 'Vient' && prev.n){ r.n = Math.min(prev.n, r.p); r.q = prev.q || ''; }
   const thanks = rtxt(r) + MODIF;
   if (window.__sending) return;
-  if (prev && prev.r === r.r && prev.p === r.p && (prev.e || 0) === r.e && (prev.n || 0) === (r.n || 0)){ note(thanks); navShow(r); return; }
   window.__sending = true; note('Envoi de votre réponse…');
   window.__saveRsvp({ familyId: guest ? guest.id : '', famille: fenc(r), places: guest ? guest.s : 0, reponse: r.r, personnes: r.p, date: Date.now() })
     .then(() => { rset(r); note(thanks); navShow(r); })
