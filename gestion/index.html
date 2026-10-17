@@ -695,7 +695,7 @@ $('#nMinus').addEventListener('click', e => { e.stopPropagation(); ncount--; nUp
 $('#nPlus').addEventListener('click', e => { e.stopPropagation(); ncount++; nUpd(); });
 ['nYes','nNo'].forEach(id => $('#'+id).addEventListener('click', e => {
   e.stopPropagation();
-  if (window.__preview || !window.__saveRsvp){ nnote('Aperçu : la réservation n’est pas enregistrée.'); return; }
+  if (window.__preview || !window.__saveRsvp){ nnote((window.__demo ? 'Démonstration' : 'Aperçu') + ' : la réservation n’est pas enregistrée.'); return; }
   if (Date.now() >= DEADLINE){ window.__rsvpInit(); return; }
   if (window.__sending) return;
   const p0 = rget(), prev = p0 && p0.r === 'Vient' && p0.a === count && (p0.e || 0) === kids ? p0 : null;
@@ -713,7 +713,7 @@ $('#nPlus').addEventListener('click', e => { e.stopPropagation(); ncount++; nUpd
   setTimeout(() => { const pre = $('#rsvpPre'); if (pre) pre.hidden = true; }, 0);
   if (!window.__saveRsvp){ try { navigator.clipboard && navigator.clipboard.writeText($('#'+id).dataset.msg || ''); } catch(err){} note('Merci !' + MS); return; }
   e.preventDefault(); /* on reste sur la page pour afficher la navette */
-  if (window.__preview){ e.preventDefault(); note('Aperçu : la réponse n’est pas enregistrée.'); navShow({ r: id === 'yes' ? 'Vient' : 'Ne vient pas', p: count + kids }); return; }
+  if (window.__preview){ e.preventDefault(); note((window.__demo ? 'Démonstration' : 'Aperçu') + ' : la réponse n’est pas enregistrée.'); navShow({ r: id === 'yes' ? 'Vient' : 'Ne vient pas', p: count + kids }); return; }
   if (Date.now() >= DEADLINE){ e.preventDefault(); window.__rsvpInit(); return; }
   const name = guest ? guest.n : 'Lien général';
   const r = { r: id==='yes' ? 'Vient' : 'Ne vient pas', a: id==='yes' ? count : 0, e: id==='yes' ? kids : 0 }; r.p = r.a + r.e;
