@@ -1137,25 +1137,28 @@ $('#tCards').addEventListener('click', () => {
   const G = window.__G || {}, top = G.top ? G.top() : '', bot = G.bottom ? G.bottom() : '';
   const fonts = [...document.querySelectorAll('style')].map(s => s.textContent).filter(t => t.includes('@font-face')).join('\n');
   const orn = `<svg class="orn" viewBox="0 0 240 30"><path d="M8 15H92M148 15H232" stroke="#b8925f" stroke-width="1.2"/><circle cx="96" cy="15" r="2.4" fill="#b8925f"/><circle cx="144" cy="15" r="2.4" fill="#b8925f"/><path d="M120 26C108 18 104 13 104 9a6.5 6.5 0 0 1 16-2 6.5 6.5 0 0 1 16 2c0 4-4 9-16 17z" fill="none" stroke="#6b4a2f" stroke-width="1.4"/><path d="M120 8v12M115 12.5h10" stroke="#b8925f" stroke-width="1.6"/></svg>`;
-  const cards = tables.map(t => { const fs = atTable(t.id); const n = fs.length; const sz = n > 14 ? 14 : n > 11 ? 16 : n > 8 ? 18 : 21;
+  const cards = tables.map(t => { const fs = atTable(t.id); const n = fs.length; const sz = n > 14 ? 17 : n > 11 ? 20 : n > 8 ? 23 : 26;
     const m = /^\s*table\s+(.+)$/i.exec(t.name || ''), big = m ? m[1] : (t.name || ''), isNum = /^\d{1,3}$/.test(big);
     const title = `<div class="tt">${m ? '<span class="tw">Table</span>' : ''}<span class="tn${isNum ? ' num' : ''}${big.length > 12 ? ' long' : ''}">${esc(big)}</span></div>`;
     return `<section class="card"><div class="frame"></div><div class="g top">${top}</div>${title}${orn}<ul style="font-size:${sz}pt">${fs.map(([f,k]) => `<li>${esc(f.name)}${k>1?` <small>(${k})</small>`:''}</li>`).join('') || '<li>&nbsp;</li>'}</ul>${orn}<div class="foot"><b>Tsidy &amp; Njara</b>Noces d’Étain · Baptême de Mihaja Kaël<br>7 novembre 2026</div><div class="g bot">${bot}</div></section>`; }).join('');
   w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Cartes de table</title><style>${fonts}
 @page{size:A4 landscape;margin:0}*{box-sizing:border-box}body{margin:0;background:#eee}
-.sheet{width:297mm;height:210mm;display:flex;background:#fff;page-break-after:always;break-after:page;margin:0 auto 8mm}
-.card{width:99mm;height:210mm;position:relative;overflow:hidden;border-right:.2mm dashed #ccc;display:flex;flex-direction:column;align-items:center;background:#fffdf9;color:#6b4a2f}
-.card:last-child{border-right:0}.frame{position:absolute;inset:7mm;border:.5mm solid #c9a978;outline:.25mm solid #c9a978;outline-offset:1.2mm;border-radius:46mm 46mm 4mm 4mm;pointer-events:none}
-.g{width:112%;margin:0 -6%;flex:none;position:relative;z-index:1}.g svg{width:100%;height:auto;display:block}.g.top{margin-top:-9mm}.g.bot{margin-top:auto;margin-bottom:-6mm}
+.sheet{width:297mm;height:209mm;overflow:hidden;break-inside:avoid;display:flex;background:#fff;page-break-after:always;break-after:page;margin:0 auto 8mm}
+.card{width:148.5mm;height:209mm;position:relative;overflow:hidden;border-right:.2mm dashed #ccc;display:flex;flex-direction:column;align-items:center;background:#fffdf9;color:#6b4a2f;padding:36mm 0 31mm}
+.card:last-child{border-right:0}.frame{position:absolute;inset:9mm;border:.5mm solid #c9a978;outline:.25mm solid #c9a978;outline-offset:1.2mm;border-radius:70mm 70mm 5mm 5mm;pointer-events:none}
+.g{width:66%;position:absolute;left:17%;z-index:1}.g svg{width:100%;height:auto;display:block}.g.top{top:-4mm}.g.bot{bottom:1mm}
 .tt{display:flex;flex-direction:column;align-items:center;margin-top:1mm;line-height:1;text-align:center;padding:0 9mm}
-.tw{font:400 30pt 'Great Vibes',cursive;color:#a87c50;margin-bottom:-2mm}
-.tn{font:400 52pt 'Great Vibes',cursive;color:#6b4a2f}.tn.long{font-size:38pt}.tn.num{font:600 66pt 'Cormorant Garamond',Georgia,serif;color:#6b4a2f;letter-spacing:.02em;font-variant-numeric:lining-nums;font-feature-settings:'lnum'}
-.orn{width:52mm;height:auto;margin:3mm 0;flex:none}
-ul{list-style:none;margin:auto 0;padding:0 12mm;font-variant-numeric:lining-nums;text-align:center;font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;color:#3a271d;line-height:1.3}li{margin:.6mm 0}
-.foot{text-align:center;font:500 9.5pt 'Cormorant Garamond',Georgia,serif;color:#a87c50;line-height:1.35;margin-bottom:1mm}.foot b{display:block;font:400 19pt 'Great Vibes',cursive;color:#6b4a2f}
+.tw{font:400 34pt 'Great Vibes',cursive;color:#a87c50;margin-bottom:-2mm}
+.tn{font:400 60pt 'Great Vibes',cursive;color:#6b4a2f}.tn.long{font-size:50pt}.tn.num{font:600 72pt 'Cormorant Garamond',Georgia,serif;color:#6b4a2f;letter-spacing:.02em;font-variant-numeric:lining-nums;font-feature-settings:'lnum'}
+.orn{width:66mm;height:auto;margin:2mm 0;flex:none}
+ul{list-style:none;margin:auto 0;padding:0 16mm;font-variant-numeric:lining-nums;text-align:center;font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;color:#3a271d;line-height:1.3}li{margin:.6mm 0}
+.foot{text-align:center;font:500 11pt 'Cormorant Garamond',Georgia,serif;color:#a87c50;line-height:1.35;margin-bottom:1mm}.foot b{display:block;font:400 22pt 'Great Vibes',cursive;color:#6b4a2f}
 small{font-size:.7em;color:#a87c50}.bar{text-align:center;font:14px sans-serif;padding:10px}
-@media print{body{background:#fff}.sheet{margin:0}.bar{display:none}}</style></head><body><div class="bar"><button onclick="print()" style="font-size:16px;padding:8px 16px">Imprimer</button> 3 cartes par feuille A4 paysage, à découper selon les pointillés.</div>
-${(() => { const c = cards.split('</section>').filter(Boolean).map(x => x + '</section>'); let o=''; for (let i=0;i<c.length;i+=3) o += `<div class="sheet">${c.slice(i,i+3).join('')}</div>`; return o; })()}</body></html>`);
+@media print{body{background:#fff}.sheet{margin:0}.bar{display:none}}</style></head><body><div class="bar"><button onclick="print()" style="font-size:16px;padding:8px 16px">Imprimer</button> 2 cartes par feuille A4 paysage, à découper selon les pointillés.</div>
+${(() => { const c = cards.split('</section>').filter(Boolean).map(x => x + '</section>'); let o=''; for (let i=0;i<c.length;i+=2) o += `<div class="sheet">${c.slice(i,i+2).join('')}</div>`; return o; })()}<script>
+function fit(){ document.querySelectorAll('.card').forEach(c => { const u = c.querySelector('ul'), g = c.querySelector('.g.bot'); let z = parseFloat(u.style.fontSize); const f = c.querySelector('.foot'), over = () => f.getBoundingClientRect().bottom > g.getBoundingClientRect().top + 30; while (over() && z > 9){ z -= .5; u.style.fontSize = z + 'pt'; } }); }
+(document.fonts ? document.fonts.ready : Promise.resolve()).then(fit); addEventListener('load', fit);
+<\/script></body></html>`);
   w.document.close();
 });
 $('#tAdd').addEventListener('click', async () => {
