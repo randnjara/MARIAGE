@@ -153,7 +153,7 @@ body{margin:0;background:var(--espresso);overflow:hidden;font-family:var(--serif
 .tot{font:500 26px var(--sans);letter-spacing:.12em;color:var(--caramel);text-align:center;margin-top:6px}
 #s4 .arch{left:74px;right:74px;top:74px;bottom:74px;border-radius:330px 330px 150px 150px}
 #s4 .col{padding:0 120px}
-#s4.nav-on .col{transform:scale(.88)}
+#s4.nav-on .col{transform:scale(.81)}
 #s4 .col>.script{font-size:92px!important}
 #s4 .col>.kicker{font-size:30px!important;margin-top:14px!important}
 #s4 .cd-t{margin-top:22px}
@@ -197,7 +197,11 @@ body{margin:0;background:var(--espresso);overflow:hidden;font-family:var(--serif
 .navc .nql{font:600 30px var(--serif);color:var(--brown);margin-bottom:-6px}
 #s4 .navc .btn-main,#s4 .navc .btn-ghost{min-width:0;font-size:26px;padding:22px 34px}
 #s4 .navc .rsvp-note{font-size:32px}
-#s4.nav-on .cd,#s4.nav-on .cd-t{display:none}
+#s4.nav-on .cd-t{margin-top:12px;font-size:24px}
+#s4.nav-on .cd{gap:10px;margin-top:8px}
+#s4.nav-on .cd>div{width:118px;padding:8px 0 6px}
+#s4.nav-on .cd b{font-size:50px}
+#s4.nav-on .cd span{font-size:16px}
 #s4.nav-on .rsvp-form{gap:12px;margin-top:18px}
 #s4.nav-on .contacts{margin-top:24px!important}
 #s4.nav-on .rsvp-note{font-size:32px}
@@ -682,7 +686,7 @@ $('#nPlus').addEventListener('click', e => { e.stopPropagation(); ncount++; nUpd
   if (prev && (prev.n || 0) === r.n && (prev.q || '') === r.q){ nnote(r.n ? `Transport réservé pour ${r.n} place${r.n > 1 ? 's' : ''}.` : 'C’est noté, pas de transport pour vous.'); return; }
   window.__sending = true; nnote('Envoi…');
   window.__saveRsvp({ familyId: guest ? guest.id : '', famille: fenc(r), places: guest ? guest.s : 0, reponse: r.r, personnes: r.p, date: Date.now() })
-    .then(() => { rset(r); note(rtxt(r) + MODIF); navShow(r); if (!r.n) nnote('C’est noté, pas de transport pour vous.'); })
+    .then(() => { rset(r); note(rtxt(r) + MODIF); $('#rsvpPre').hidden = true; navShow(r); if (!r.n) nnote('C’est noté, pas de transport pour vous.'); })
     .catch(() => nnote('L’envoi a échoué. Vérifiez votre connexion et réessayez.'))
     .finally(() => { window.__sending = false; });
 }));
