@@ -850,12 +850,15 @@ function planFromWorkbook(wb){
   for (const bl of blocks){
     const same = fams.find(f => f.key === bl.key && f.cat === bl.cat), others = fams.filter(f => f.key === bl.key && f.cat !== bl.cat);
     const f = same || (others.length ? others.sort((x, y) => (x.placed - x.seats) - (y.placed - y.seats))[0] : null);
-    if (!f){ orphans.push({ name: bl.name, cat: bl.cat, table: bl.no, n: bl.n }); continue; }
+    if (!f){ // nom écrit seulement sous une table : on crée la famille avec ce nombre de personnes
+      let o = fams.find(x => x.key === bl.key && x.cat === bl.cat && x.fromTable);
+      if (!o){ o = { name: bl.name, key: bl.key, cat: bl.cat, adults: 0, kids: 0, bebes: 0, seats: 0, s: {}, placed: 0, fromTable: true }; fams.push(o); orphans.push({ name: bl.name, cat: bl.cat, table: bl.no, n: bl.n }); }
+      o.adults += bl.n; o.seats += bl.n; o.s[bl.no] = (o.s[bl.no] || 0) + bl.n; o.placed += bl.n; continue; }
     f.s[bl.no] = (f.s[bl.no] || 0) + bl.n; f.placed += bl.n;
   }
   for (const f of fams){ const tl = Object.entries(f.s).sort((x, y) => y[1] - x[1] || x[0] - y[0]);
     f.tableNo = tl.length ? +tl[0][0] : 0; f.tnote = tl.length > 1 ? tl.map(([t, c]) => `table ${t} : ${c}`).join(', ') : ''; f.split = tl.length ? Object.fromEntries(tl) : null;
-    delete f.s; delete f.placed; delete f.key; }
+    delete f.s; delete f.placed; delete f.key; delete f.fromTable; }
   return { tnames, fams, orphans };
 }
 
@@ -887,7 +890,7 @@ $('#file').addEventListener('change', async e => {
     if (impPlan){
       const P = impPlan, cats = {}; P.fams.forEach(f => { const c = cats[f.cat] = cats[f.cat] || {n:0,p:0}; c.n++; c.p += f.seats; });
       const tot = P.fams.reduce((a,f)=>a+f.seats,0), notab = P.fams.filter(f=>!f.tableNo).length;
-      $('#iInfo').innerHTML = `Classeur complet reconnu : <b>${Object.keys(P.tnames).length} tables</b> et <b>${P.fams.length} familles</b> (${tot} personnes) dans ${Object.keys(cats).length} catégories. Chaque famille est placée automatiquement à sa table.` + (notab ? ` ${notab} famille${notab>1?'s':''} sans numéro de table resteront « Sans table ».` : '') + ' Une famille déjà présente (même nom et même catégorie) est mise à jour.' + (P.orphans.length ? `<br><br><b style="color:#a33">Attention : ${P.orphans.length} nom${P.orphans.length>1?'s':''} écrit${P.orphans.length>1?'s':''} sous une table ne ${P.orphans.length>1?'sont':'est'} pas dans la liste de la feuille</b> (orthographe différente ?) : ${P.orphans.map(o => `${esc(o.name)} (table ${o.table}, ${o.n}, ${esc(o.cat)})`).join(' · ')}. Corrigez le nom dans l’Excel pour qu’il soit identique, puis réimportez.` : '');
+      $('#iInfo').innerHTML = `Classeur complet reconnu : <b>${Object.keys(P.tnames).length} tables</b> et <b>${P.fams.length} familles</b> (${tot} personnes) dans ${Object.keys(cats).length} catégories. Chaque famille est placée automatiquement à sa table.` + (notab ? ` ${notab} famille${notab>1?'s':''} sans numéro de table resteront « Sans table ».` : '') + ' Une famille déjà présente (même nom et même catégorie) est mise à jour.' + (P.orphans.length ? `<br><br><b>${P.orphans.length} nom${P.orphans.length>1?'s':''} écrit${P.orphans.length>1?'s':''} seulement sous une table</b> (pas dans la liste de la feuille), ajouté${P.orphans.length>1?'s':''} avec le nombre indiqué : ${P.orphans.map(o => `${esc(o.name)} (table ${o.table}, ${o.n})`).join(' · ')}.` : '');
       $('#iPrev').innerHTML = '<tr><th>Catégorie</th><th>Familles</th><th>Personnes</th></tr>' + Object.entries(cats).map(([c,v])=>`<tr><td>${esc(c)}</td><td>${v.n}</td><td>${v.p}</td></tr>`).join('');
       $('#iGo').textContent = `Importer ${P.fams.length} familles et ${Object.keys(P.tnames).length} tables`;
       $('#ovImp').hidden = false; return;
@@ -925,7 +928,7 @@ async function syncSheet(manual){
     const wb = XLSX.read(new Uint8Array(await r.arrayBuffer()), { type:'array' });
     const P = planFromWorkbook(wb); if (!P || !P.fams.length) throw new Error('feuilles non reconnues');
     const m = await runPlanImport(P);
-    $('#syncInfo').textContent = `Synchronisé à ${new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})} · ${m}` + (P.orphans.length ? ` · ⚠ ${P.orphans.length} nom(s) sous une table sans famille : ${P.orphans.map(o=>o.name).join(', ')}` : '');
+    $('#syncInfo').textContent = `Synchronisé à ${new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})} · ${m}` + (P.orphans.length ? ` · ${P.orphans.length} nom(s) pris depuis le plan de table (absents de la liste) : ${P.orphans.map(o=>o.name).join(', ')}` : '');
     if (manual) toast('Gestion mise à jour depuis Google Sheets.');
   } catch(err){
     $('#syncInfo').textContent = 'Synchronisation impossible : ' + (err.message || err) + '. Vérifiez que le fichier est partagé « Tous les utilisateurs disposant du lien ».';
