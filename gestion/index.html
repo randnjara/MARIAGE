@@ -464,6 +464,8 @@ html.mode-admin #wrap{display:none}
       <select id="fCat" aria-label="Filtrer par catégorie"><option value="">Toutes les catégories</option></select>
       <select id="fSide" hidden aria-label="Filtrer par côté"><option value="">Les deux familles</option><option value="njara">Famille Njara</option><option value="tsidy">Famille Tsidy</option><option value="none">À classer</option></select>
       <button class="a-btn sec" type="button" id="aImport">Importer Excel</button>
+      <button class="a-btn sec" type="button" id="aSync" title="Relit votre fichier Google Sheets et met la gestion à jour">↻ Synchroniser Google Sheets</button>
+      <span id="syncInfo" style="font-size:13px;opacity:.75;align-self:center"></span>
       <button class="a-btn sec" type="button" id="aClear" style="color:#9b2c2c;border-color:rgba(155,44,44,.45)">Supprimer toute la liste</button>
       <button class="a-btn" type="button" id="aAdd">Ajouter une famille</button>
       <input type="file" id="file" accept=".xlsx,.xls,.csv" hidden>
@@ -704,6 +706,11 @@ const atTable = tid => families.map(f => [f, atT(f, tid)]).filter(([, n]) => n >
 const invLink = f => GUEST_URL + '?i=' + enc({n:f.name, s:f.seats, id:f.id, ...(f.adults != null ? {a:f.adults, e:f.kids||0} : {})});
 const invText = f => `Bonjour ${f.name},\nNous avons la joie de vous inviter à nos Noces d'Étain (10 ans de mariage) et au baptême de notre fils Andriatsididika Mihaja Kael, le samedi 7 novembre 2026 à 8h.\nVotre invitation : ${invLink(f)}\nMerci de confirmer avant le 30 octobre.\nTsidy & Njara`;
 
+const ready = {}; let autoDone = false;
+async function autoSync(){ if (autoDone || !ready.f || !ready.t) return; autoDone = true;
+  let u = ''; try { u = localStorage.getItem('sheetUrl') || ''; } catch(e){} if (!sheetId(u)) return;
+  for (let i = 0; i < 40 && !window.XLSX; i++) await new Promise(r => setTimeout(r, 250));
+  syncSheet(false); }
 async function startAdmin(){
   clearTimeout(timer);
   document.documentElement.classList.add('mode-admin'); $('#admin').hidden = false;
@@ -712,8 +719,8 @@ async function startAdmin(){
   db = await window.__api?.use('db');
   if (!db){ $('#famList').innerHTML = '<div class="empty"><h3>Connexion requise</h3>Connectez-vous avec votre compte Google pour voir la liste des invités.</div>'; return; }
   const fail = e => toast('Lecture impossible : ' + (e?.message || 'réessayez plus tard'));
-  db.collection('families').onSnapshot(s => { families = s.docs.map(d => ({ id:d.id, ...d.data() })).sort((a,b)=>String(a.name).localeCompare(String(b.name),'fr')); render(); }, fail);
-  db.collection('tables').onSnapshot(s => { tables = s.docs.map(d => ({ id:d.id, ...d.data() })).sort((a,b)=>(a.order||0)-(b.order||0)); render(); }, fail);
+  db.collection('families').onSnapshot(s => { families = s.docs.map(d => ({ id:d.id, ...d.data() })).sort((a,b)=>String(a.name).localeCompare(String(b.name),'fr')); render(); ready.f = 1; autoSync(); }, fail);
+  db.collection('tables').onSnapshot(s => { tables = s.docs.map(d => ({ id:d.id, ...d.data() })).sort((a,b)=>(a.order||0)-(b.order||0)); render(); ready.t = 1; autoSync(); }, fail);
   window.__api.use('downloads').then(d => { downloads = d; $('#aExport').hidden = !d; });
 }
 const fdoc = id => db.collection('families').doc(id);
@@ -901,6 +908,32 @@ function previewImport(){ const p = parsed(); $('#iPrev').innerHTML = '<tr><th>N
 ['#iName','#iSeats','#iPhone'].forEach(s => $(s).addEventListener('change', previewImport));
 $('#iSheet').addEventListener('change', () => loadSheet(+$('#iSheet').value));
 $('#iCancel').addEventListener('click', () => $('#ovImp').hidden = true);
+/* synchronisation Google Sheets (lien gardé sur cet appareil seulement) */
+const SK = 'sheetUrl';
+const sheetId = u => (String(u||'').match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]{20,})/) || [])[1];
+let syncing = false;
+async function syncSheet(manual){
+  if (syncing) return; let url = ''; try { url = localStorage.getItem(SK) || ''; } catch(e){}
+  if (manual && (!sheetId(url) || manual === 'ask')){ const u = prompt('Collez le lien de partage de votre fichier Google Sheets (il sera gardé sur cet appareil) :', url); if (u === null) return; url = u.trim(); }
+  const id = sheetId(url); if (!id){ if (manual) toast('Lien Google Sheets non reconnu.'); return; }
+  try { localStorage.setItem(SK, url); } catch(e){}
+  if (!window.XLSX){ toast('Lecteur Excel pas encore chargé, réessayez.'); return; }
+  syncing = true; $('#aSync').disabled = true; $('#syncInfo').textContent = 'Synchronisation…';
+  try {
+    const r = await fetch(`https://docs.google.com/spreadsheets/d/${id}/export?format=xlsx&t=${Date.now()}`);
+    if (!r.ok) throw new Error('accès refusé (' + r.status + ')');
+    const wb = XLSX.read(new Uint8Array(await r.arrayBuffer()), { type:'array' });
+    const P = planFromWorkbook(wb); if (!P || !P.fams.length) throw new Error('feuilles non reconnues');
+    const m = await runPlanImport(P);
+    $('#syncInfo').textContent = `Synchronisé à ${new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})} · ${m}` + (P.orphans.length ? ` · ⚠ ${P.orphans.length} nom(s) sous une table sans famille : ${P.orphans.map(o=>o.name).join(', ')}` : '');
+    if (manual) toast('Gestion mise à jour depuis Google Sheets.');
+  } catch(err){
+    $('#syncInfo').textContent = 'Synchronisation impossible : ' + (err.message || err) + '. Vérifiez que le fichier est partagé « Tous les utilisateurs disposant du lien ».';
+  }
+  syncing = false; $('#aSync').disabled = false;
+}
+$('#aSync').addEventListener('click', e => syncSheet(e.shiftKey ? 'ask' : true));
+$('#aSync').addEventListener('contextmenu', e => { e.preventDefault(); syncSheet('ask'); });
 async function runPlanImport(P){
   const tid = {}; let tn = 0, added = 0, upd = 0;
   for (const [no, name] of Object.entries(P.tnames)){
@@ -913,7 +946,7 @@ async function runPlanImport(P){
     const side = /njara/i.test(x.cat) && !/tsidy/i.test(x.cat) ? 'njara' : /tsidy/i.test(x.cat) && !/njara/i.test(x.cat) ? 'tsidy' : '';
     const data = { name: x.name, cat: x.cat, side, adults: x.adults, kids: x.kids, bebes: x.bebes, seats: x.seats, table: (x.tableNo && tid[x.tableNo]) || '', tnote: x.tnote, alloc: x.split ? Object.fromEntries(Object.entries(x.split).filter(([n]) => tid[n]).map(([n, c]) => [tid[n], c])) : null };
     const ex = families.find(f => norm(f.name) === norm(x.name) && (f.cat || '') === x.cat);
-    if (ex){ await fdoc(ex.id).update(data); upd++; }
+    if (ex){ if (Object.keys(data).some(k => JSON.stringify(ex[k] ?? null) !== JSON.stringify(data[k] ?? null))){ await fdoc(ex.id).update(data); upd++; } }
     else { await db.collection('families').add({ ...data, phone: '', status: 'attente', coming: null, sent: false, created: Date.now() }); added++; }
     $('#iGo').textContent = `Familles… ${added + upd}/${P.fams.length}`;
   }
