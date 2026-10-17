@@ -194,6 +194,7 @@ body{margin:0;background:var(--espresso);overflow:hidden;font-family:var(--serif
 .navc .stepper{gap:24px}.navc .stepper button{width:76px;height:76px;font-size:44px}.navc .stepper output{font-size:76px;min-width:80px}
 .navc input{font:30px var(--serif);padding:16px 24px;border:2px solid rgba(160,120,70,.45);border-radius:40px;background:#fffaf2;color:var(--espresso);width:640px;box-sizing:border-box;text-align:center}
 .navc .nbtn{display:flex;gap:16px}
+.navc .nql{font:600 30px var(--serif);color:var(--brown);margin-bottom:-6px}
 #s4 .navc .btn-main,#s4 .navc .btn-ghost{min-width:0;font-size:26px;padding:22px 34px}
 #s4 .navc .rsvp-note{font-size:32px}
 #s4.nav-on .cd,#s4.nav-on .cd-t{display:none}
@@ -333,7 +334,8 @@ const run=()=>document.querySelectorAll('.flw[data-g]').forEach(e=>{if(!e.firstC
           <div class="kicker" style="font-size:26px;margin-top:6px">Église → Espace Fenitra</div>
           <p>Aller : de l’Église Christ Roi Manjakaray vers l’Espace Fenitra.<br>Retour organisé selon votre quartier.</p>
           <div class="srow"><span class="slab">Places</span><div class="stepper"><button type="button" id="nMinus" aria-label="Une place de moins">−</button><output id="nCnt">1</output><button type="button" id="nPlus" aria-label="Une place de plus">+</button></div></div>
-          <input id="nQ" maxlength="30" placeholder="Votre quartier pour le retour (facultatif)" autocomplete="off">
+          <label for="nQ" class="nql">Veuillez indiquer votre quartier pour le retour :</label>
+          <input id="nQ" maxlength="30" placeholder="Ex. : Analakely, Ivandry…" autocomplete="off">
           <div class="nbtn"><button type="button" class="btn-main" id="nYes">Réserver le transport</button><button type="button" class="btn-ghost" id="nNo">Pas besoin</button></div>
           <div class="rsvp-note" id="nNote" hidden></div>
         </div>
@@ -603,6 +605,7 @@ $('#nPlus').addEventListener('click', e => { e.stopPropagation(); ncount++; nUpd
   if (Date.now() >= DEADLINE){ window.__rsvpInit(); return; }
   const prev = rget(); if (!prev || prev.r !== 'Vient' || window.__sending) return;
   const r = { ...prev, n: id === 'nYes' ? ncount : 0, q: id === 'nYes' ? $('#nQ').value.trim().slice(0, 30) : '' };
+  if (id === 'nYes' && !r.q){ nnote('Veuillez indiquer votre quartier pour le retour.'); $('#nQ').focus(); return; }
   if ((prev.n || 0) === r.n && (prev.q || '') === r.q){ nnote(r.n ? `Transport réservé pour ${r.n} place${r.n > 1 ? 's' : ''}.` : 'C’est noté, pas de transport pour vous.'); return; }
   window.__sending = true; nnote('Envoi…');
   window.__saveRsvp({ familyId: guest ? guest.id : '', famille: fenc(r), places: guest ? guest.s : 0, reponse: r.r, personnes: r.p, date: Date.now() })
