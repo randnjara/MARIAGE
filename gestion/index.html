@@ -710,7 +710,7 @@ const ready = {}; let autoDone = false;
 async function autoSync(){ if (autoDone || !ready.f || !ready.t) return; autoDone = true;
   let u = ''; try { u = localStorage.getItem('sheetUrl') || ''; } catch(e){} if (!sheetId(u)) return;
   for (let i = 0; i < 40 && !window.XLSX; i++) await new Promise(r => setTimeout(r, 250));
-  syncSheet(false); }
+  syncSheet(false); setInterval(() => { if (!document.hidden) syncSheet(false); }, 60000); }
 async function startAdmin(){
   clearTimeout(timer);
   document.documentElement.classList.add('mode-admin'); $('#admin').hidden = false;
