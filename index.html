@@ -593,8 +593,7 @@ window.__rsvpInit = () => {
   const prev = rget(), closed = Date.now() >= DEADLINE;
   ['#stepper','#yes','#no','#howMany'].forEach(q => { $(q).style.display = closed ? 'none' : ''; });
   if (closed){ note((prev ? rtxt(prev) + ' ' : '') + 'Les réponses sont closes depuis le 30 octobre 2026. Pour toute question, appelez Tsidy ou Njara.'); return; }
-  if (prev){ if (prev.r === 'Vient' && prev.p) { count = prev.a ?? prev.p; kids = prev.e || 0; updateRsvp(); } note(rtxt(prev) + MODIF); $('#rsvpPre').hidden = true; }
-  navShow(prev);
+  if (prev && prev.r === 'Vient' && prev.p) { count = prev.a ?? prev.p; kids = prev.e || 0; updateRsvp(); }
 };
 $('#nMinus').addEventListener('click', e => { e.stopPropagation(); ncount--; nUpd(); });
 $('#nPlus').addEventListener('click', e => { e.stopPropagation(); ncount++; nUpd(); });
