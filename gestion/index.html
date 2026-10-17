@@ -611,7 +611,7 @@ let cur = 0, timer = null, opened = false, guest = null, count = 1, kids = 0;
 function show(i){
   const prev = scenes[cur];
   if (prev && prev !== scenes[i]){ prev.style.setProperty('--e','0s'); prev.classList.add('out'); prev.classList.remove('cur'); const p=prev; setTimeout(()=>{ if (scenes[cur]!==p) p.classList.remove('on','out'); }, 1200); }
-  if (i !== 0){ if (!film.muted) soundOn = true; film.pause(); musicFromFilm(); }
+  if (i !== 0){ film.pause(); musicFromFilm(); }
   const sc = scenes[i]; sc.classList.remove('on','out'); void sc.offsetWidth; sc.style.setProperty('--s','0s'); sc.classList.add('on','cur'); cur = i;
   [...bars.children].forEach((b,k)=>{ b.className = k < i-1 ? 'done' : ''; b.style.setProperty('--dur', PAGE+'ms'); });
   clearTimeout(timer);
@@ -627,30 +627,29 @@ function show(i){
 const film = document.getElementById('film');
 const music = new Audio(new URL('music.mp3?v=2', film.querySelector('source').src).href); music.loop = true; music.preload = 'auto'; window.__music = music;
 let soundOn = false, musicUnlocked = false;
-function unlockMusic(){ if (musicUnlocked) return; musicUnlocked = true; const p = music.play(); if (p && p.then) p.then(() => { if (cur === 0) music.pause(); }).catch(() => { musicUnlocked = false; }); }
-function musicFromFilm(){ if (!soundOn || !music.paused) return; let t = film.currentTime || 0; if (!isFinite(t)) t = 0; try { music.currentTime = t; } catch(e){} const p = music.play(); if (p && p.catch) p.catch(() => {}); }
-function openEnv(){ if (cur !== 0) return; film.muted = false; const pr = film.play(); $('#playBtn').hidden = true; if (pr && pr.then) pr.then(() => { soundOn = !film.muted; }).catch(() => { film.pause(); $('#playBtn').hidden = false; }); }
+/* une seule source de son : music.mp3 joue du début à la fin (film muet), donc aucun relais entre le film et les pages */
+film.muted = true;
+function syncMusic(force){ const t = isFinite(film.currentTime) ? film.currentTime : 0; if (force || Math.abs(music.currentTime - t) > 0.35){ try { music.currentTime = t; } catch(e){} } }
+function playMusic(){ if (cur === 0) syncMusic(true); const p = music.play(); if (p && p.then) p.then(() => { soundOn = musicUnlocked = true; }).catch(() => {}); return p; }
+function unlockMusic(){ soundOn = true; playMusic(); }
+function musicFromFilm(){ if (!soundOn || !music.paused) return; playMusic(); }
+function openEnv(){ if (cur !== 0) return; film.muted = true; const pr = film.play(); $('#playBtn').hidden = true;
+  const mp = music.paused ? playMusic() : null;
+  if (mp && mp.catch) mp.catch(() => { if (!soundOn && cur === 0){ film.pause(); $('#playBtn').hidden = false; } });
+  if (pr && pr.catch) pr.catch(() => { film.pause(); music.pause(); $('#playBtn').hidden = false; }); }
 function startFilm(){ try { film.currentTime = 0; } catch(e){} openEnv(); }
 film.addEventListener('ended', () => { if (cur === 0) show(1); });
 /* nom de la famille au-dessus de « Vous êtes invités », pendant la page titre du film */
 film.addEventListener('timeupdate', () => { const el = $('#filmName'); if (!el || !guest) return; const tt = film.currentTime; el.classList.toggle('on', tt >= 2.6 && tt < 11.5); });
-/* relais sans coupure : la musique démarre juste avant la fin du film, puis le film se tait */
-let handoff = 0;
-function handTick(){
-  if (handoff !== 1 || cur !== 0) { handoff = handoff === 1 ? 0 : handoff; return; }
-  const d = film.duration, t = film.currentTime;
-  if (t >= d - 0.35){ handoff = 2; try { music.currentTime = t; } catch(e){} music.addEventListener('playing', () => { if (cur === 0 || !film.paused) film.muted = true; }, { once: true }); const p = music.play(); if (p && p.catch) p.catch(() => {}); return; }
-  requestAnimationFrame(handTick);
-}
-film.addEventListener('timeupdate', () => {
-  const d = film.duration, t = film.currentTime;
-  if (t < 1) handoff = 0;
-  if (!handoff && soundOn && !film.muted && music.paused && isFinite(d) && t > d - 2.5 && t < d - 0.35){ handoff = 1; try { music.currentTime = d - 0.35; } catch(e){} requestAnimationFrame(handTick); }
-});
+/* la musique suit le film tant qu'il joue */
+film.addEventListener('timeupdate', () => { if (cur === 0 && soundOn && !music.paused && !film.paused) syncMusic(false); });
+film.addEventListener('pause', () => setTimeout(() => { if (cur === 0 && !film.ended && film.paused) music.pause(); }, 0));
+film.addEventListener('waiting', () => { if (cur === 0) music.pause(); });
+film.addEventListener('playing', () => { if (cur === 0 && soundOn && music.paused) playMusic(); });
 film.addEventListener('error', () => { if (cur === 0) setTimeout(() => cur === 0 && show(1), 1500); }, true);
 $('#playBtn').addEventListener('click', e => { e.stopPropagation(); soundOn = true; unlockMusic(); openEnv(); });
 $('#skipBtn').addEventListener('click', e => { e.stopPropagation(); film.pause(); show(1); });
-function unmute(){ soundOn = true; unlockMusic(); film.muted = false; if (film.paused && cur === 0) openEnv(); }
+function unmute(){ soundOn = true; if (film.paused && cur === 0) openEnv(); else if (music.paused) playMusic(); }
 $('#sndBtn').addEventListener('click', e => { e.stopPropagation(); unmute(); });
 stage.addEventListener('click', e => {
   if (e.target.closest('a,button,.rsvp-form')) return;
