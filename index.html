@@ -151,7 +151,9 @@ body{margin:0;background:var(--espresso);overflow:hidden;font-family:var(--serif
 .env.open .addr{animation:fadeOut .6s ease var(--o) forwards}
 .rsvp-form{display:flex;flex-direction:column;align-items:center;gap:26px;margin-top:44px}
 .tot{font:500 26px var(--sans);letter-spacing:.12em;color:var(--caramel);text-align:center;margin-top:6px}
-#s4 .col{padding:0 150px}
+#s4 .arch{left:74px;right:74px;top:74px;bottom:74px;border-radius:330px 330px 150px 150px}
+#s4 .col{padding:0 120px}
+#s4.nav-on .col{transform:scale(.88)}
 #s4 .col>.script{font-size:92px!important}
 #s4 .col>.kicker{font-size:30px!important;margin-top:14px!important}
 #s4 .cd-t{margin-top:22px}
@@ -306,10 +308,10 @@ const run=()=>document.querySelectorAll('.flw[data-g]').forEach(e=>{if(!e.firstC
   <section class="scene pg" id="s4">
     <div class="paper"><div class="tex grain"></div><div class="frame"></div></div>
     <div class="arch rv" style="--d:.1s"></div>
-    <div class="br" data-b="sx:150,sy:560,r:25,len:380,bend:-70,n:8,sz:80,d:.4"></div>
-    <div class="br" data-b="sx:1000,sy:1840,r:-80,len:360,bend:50,n:7,sz:75,d:.8"></div>
-    <div class="flw" data-g="small" style="--d:.6s;right:60px;top:110px;width:300px;height:300px"></div>
-    <div class="flw" data-g="small" style="--d:1s;left:40px;bottom:40px;width:280px;height:280px;transform:rotate(180deg) scaleX(-1)"></div>
+    <div class="flw" data-g="small" style="--d:.6s;right:-6px;top:-6px;width:250px;height:250px"></div>
+    <div class="flw" data-g="small" style="--d:.8s;left:-6px;top:-6px;width:250px;height:250px;transform:scaleX(-1)"></div>
+    <div class="flw" data-g="small" style="--d:1s;left:-6px;bottom:-6px;width:250px;height:250px;transform:rotate(180deg)"></div>
+    <div class="flw" data-g="small" style="--d:1.2s;right:-6px;bottom:-6px;width:250px;height:250px;transform:scaleY(-1)"></div>
     <div class="col">
       <div class="script rv" style="--d:.4s;font-size:110px;line-height:1.1">Merci de confirmer<br>votre présence</div>
       <div class="kicker rv" style="--d:.8s;margin-top:24px;font-size:36px">avant le 30 octobre 2026</div>
@@ -327,12 +329,12 @@ const run=()=>document.querySelectorAll('.flw[data-g]').forEach(e=>{if(!e.firstC
         <a class="btn-ghost" id="no" target="_blank" rel="noopener" href="#">Je ne pourrai pas venir</a>
         <div class="rsvp-note" id="rsvpNote" hidden></div>
         <div class="navc" id="navCard" hidden>
-          <div class="script" style="font-size:62px;line-height:1">Navette offerte</div>
+          <div class="script" style="font-size:62px;line-height:1">Transport offert</div>
           <div class="kicker" style="font-size:26px;margin-top:6px">Église → Espace Fenitra</div>
-          <p>Aller : départ de l’Église Christ Roi Manjakaray à 11h vers l’Espace Fenitra.<br>Retour : organisé à la fin de la fête selon votre quartier.</p>
+          <p>Aller : de l’Église Christ Roi Manjakaray vers l’Espace Fenitra.<br>Retour organisé selon votre quartier.</p>
           <div class="srow"><span class="slab">Places</span><div class="stepper"><button type="button" id="nMinus" aria-label="Une place de moins">−</button><output id="nCnt">1</output><button type="button" id="nPlus" aria-label="Une place de plus">+</button></div></div>
           <input id="nQ" maxlength="30" placeholder="Votre quartier pour le retour (facultatif)" autocomplete="off">
-          <div class="nbtn"><button type="button" class="btn-main" id="nYes">Réserver la navette</button><button type="button" class="btn-ghost" id="nNo">Pas besoin</button></div>
+          <div class="nbtn"><button type="button" class="btn-main" id="nYes">Réserver le transport</button><button type="button" class="btn-ghost" id="nNo">Pas besoin</button></div>
           <div class="rsvp-note" id="nNote" hidden></div>
         </div>
       </div>
@@ -580,12 +582,11 @@ const rkey = () => 'rsvp_' + (guest ? (guest.id || guest.n) : 'general');
 const rget = () => { try { return JSON.parse(localStorage.getItem(rkey()) || 'null'); } catch(e){ return null; } };
 const rset = v => { try { localStorage.setItem(rkey(), JSON.stringify(v)); } catch(e){} };
 const ptxt = r => { const a = r.a ?? r.p, e = r.e || 0; return `${a} adulte${a > 1 ? 's' : ''}` + (e ? ` et ${e} enfant${e > 1 ? 's' : ''}` : ''); };
-const ntxt = r => r.r === 'Vient' && r.n ? ` Navette : ${r.n} place${r.n > 1 ? 's' : ''} réservée${r.n > 1 ? 's' : ''}, départ de l’église à 11h.` : '';
 const rtxt = r => r.r === 'Vient' ? `Votre réponse est enregistrée, vous venez à ${ptxt(r)}.` : 'Votre réponse est enregistrée, vous ne pourrez pas venir.';
 const fenc = r => { const q = String(r.q || '').replace(/[|\n\r]/g, ' ').trim().slice(0, 30); const suf = ` |A${r.a}|E${r.e}` + (r.r === 'Vient' ? `|N${r.n || 0}|Q${q}` : ''); return (guest ? guest.n : 'Lien général').slice(0, 119 - suf.length) + suf; };
 let ncount = 1;
 const nUpd = () => { const r = rget(), max = r && r.p ? r.p : (count + kids); ncount = Math.max(1, Math.min(max, ncount)); $('#nCnt').textContent = ncount; $('#nMinus').disabled = ncount <= 1; $('#nPlus').disabled = ncount >= max; };
-function navShow(r){ const c = $('#navCard'); if (!c) return; c.hidden = !(r && r.r === 'Vient'); $('#s4').classList.toggle('nav-on', !c.hidden); if (c.hidden) return; const nn = $('#nNote'); nn.hidden = !r.n; if (r.n) nn.textContent = `Navette réservée pour ${r.n} place${r.n > 1 ? 's' : ''}.` + (r.q ? ` Retour : ${r.q}.` : ''); ncount = r.n || r.p || 1; $('#nQ').value = r.q || ''; $('#nYes').textContent = r.n ? 'Modifier la réservation' : 'Réserver la navette'; $('#nNo').textContent = r.n ? 'Annuler la navette' : 'Pas besoin'; nUpd(); }
+function navShow(r){ const c = $('#navCard'); if (!c) return; c.hidden = !(r && r.r === 'Vient'); $('#s4').classList.toggle('nav-on', !c.hidden); if (c.hidden) return; const nn = $('#nNote'); nn.hidden = !r.n; if (r.n) nn.textContent = `Transport réservé pour ${r.n} place${r.n > 1 ? 's' : ''}.` + (r.q ? ` Retour : ${r.q}.` : ''); ncount = r.n || r.p || 1; $('#nQ').value = r.q || ''; $('#nYes').textContent = r.n ? 'Modifier la réservation' : 'Réserver le transport'; $('#nNo').textContent = r.n ? 'Annuler le transport' : 'Pas besoin'; nUpd(); }
 function nnote(t){ const n = $('#nNote'); n.hidden = false; n.textContent = t; }
 window.__rsvpInit = () => {
   if (window.__preview || !window.__saveRsvp) return;
@@ -603,10 +604,10 @@ $('#nPlus').addEventListener('click', e => { e.stopPropagation(); ncount++; nUpd
   if (Date.now() >= DEADLINE){ window.__rsvpInit(); return; }
   const prev = rget(); if (!prev || prev.r !== 'Vient' || window.__sending) return;
   const r = { ...prev, n: id === 'nYes' ? ncount : 0, q: id === 'nYes' ? $('#nQ').value.trim().slice(0, 30) : '' };
-  if ((prev.n || 0) === r.n && (prev.q || '') === r.q){ nnote(r.n ? `Navette réservée pour ${r.n} place${r.n > 1 ? 's' : ''}.` : 'C’est noté, pas de navette pour vous.'); return; }
+  if ((prev.n || 0) === r.n && (prev.q || '') === r.q){ nnote(r.n ? `Transport réservé pour ${r.n} place${r.n > 1 ? 's' : ''}.` : 'C’est noté, pas de transport pour vous.'); return; }
   window.__sending = true; nnote('Envoi…');
   window.__saveRsvp({ familyId: guest ? guest.id : '', famille: fenc(r), places: guest ? guest.s : 0, reponse: r.r, personnes: r.p, date: Date.now() })
-    .then(() => { rset(r); note(rtxt(r) + MODIF); navShow(r); if (!r.n) nnote('C’est noté, pas de navette pour vous.'); })
+    .then(() => { rset(r); note(rtxt(r) + MODIF); navShow(r); if (!r.n) nnote('C’est noté, pas de transport pour vous.'); })
     .catch(() => nnote('L’envoi a échoué. Vérifiez votre connexion et réessayez.'))
     .finally(() => { window.__sending = false; });
 }));
