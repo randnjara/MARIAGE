@@ -682,8 +682,8 @@ $('#nPlus').addEventListener('click', e => { e.stopPropagation(); ncount++; nUpd
 ['yes','no'].forEach(id => $('#'+id).addEventListener('click', e => {
   const MS = ' Votre message est copié : collez-le dans Messenger et envoyez-le.';
   setTimeout(() => { const pre = $('#rsvpPre'); if (pre) pre.hidden = true; }, 0);
-  try { navigator.clipboard && navigator.clipboard.writeText($('#'+id).dataset.msg || ''); } catch(err){}
-  if (!window.__saveRsvp){ note('Merci !' + MS); return; }
+  if (!window.__saveRsvp){ try { navigator.clipboard && navigator.clipboard.writeText($('#'+id).dataset.msg || ''); } catch(err){} note('Merci !' + MS); return; }
+  e.preventDefault(); /* on reste sur la page pour afficher la navette */
   if (window.__preview){ e.preventDefault(); note('Aperçu : la réponse n’est pas enregistrée.'); navShow(id === 'yes' ? { r: 'Vient', p: count + kids } : null); return; }
   if (Date.now() >= DEADLINE){ e.preventDefault(); window.__rsvpInit(); return; }
   const name = guest ? guest.n : 'Lien général';
