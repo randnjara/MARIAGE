@@ -153,7 +153,19 @@ body{margin:0;background:var(--espresso);overflow:hidden;font-family:var(--serif
 .tot{font:500 26px var(--sans);letter-spacing:.12em;color:var(--caramel);text-align:center;margin-top:6px}
 #s4 .arch{left:74px;right:74px;top:74px;bottom:74px;border-radius:330px 330px 150px 150px}
 #s4 .col{padding:0 120px}
-#s4.nav-on .col{transform:scale(.81)}
+#s4.nav-on .col{transform:scale(.88);padding:0 70px}
+#s4.nav-on .steppers{flex-direction:row;flex-wrap:wrap;justify-content:center;gap:8px 26px}
+#s4.nav-on .steppers .slab{width:auto}
+#s4.nav-on .steppers .tot{flex-basis:100%}
+#s4.nav-on .srow{gap:12px}
+#s4.nav-on .steppers .slab{font-size:30px;letter-spacing:.12em}
+#s4.nav-on .steppers .stepper{gap:14px}
+.fallz{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:1}
+.fallz i{position:absolute;top:-80px;left:var(--x);width:var(--w);height:calc(var(--w)*.55);animation:fz var(--t) linear var(--dl) infinite;opacity:0}
+.fallz i::before{content:"";position:absolute;inset:0;background:var(--c);border-radius:0 100% 0 100%;transform:rotate(25deg);animation:fzs calc(var(--t)/3) ease-in-out infinite alternate}
+@keyframes fz{0%{transform:translate(0,0) rotate(0);opacity:0}8%{opacity:.85}90%{opacity:.8}100%{transform:translate(var(--dx),2050px) rotate(540deg);opacity:0}}
+@keyframes fzs{from{transform:rotate(-20deg) translateX(-20px)}to{transform:rotate(40deg) translateX(20px)}}
+#s4 .col{z-index:2}
 #s4 .col>.script{font-size:92px!important}
 #s4 .col>.kicker{font-size:30px!important;margin-top:14px!important}
 #s4 .cd-t{margin-top:22px}
@@ -317,6 +329,7 @@ const run=()=>document.querySelectorAll('.flw[data-g]').forEach(e=>{if(!e.firstC
   <section class="scene pg" id="s4">
     <div class="paper"><div class="tex grain"></div><div class="frame"></div></div>
     <div class="arch rv" style="--d:.1s"></div>
+    <div class="fallz" aria-hidden="true"><i style="--x:371px;--w:30px;--t:11.4s;--dl:-0.7s;--dx:114px;--c:#8a5a35"></i><i style="--x:136px;--w:37px;--t:12.5s;--dl:-12.7s;--dx:-51px;--c:#a77b4f"></i><i style="--x:78px;--w:28px;--t:11.6s;--dl:-1.0s;--dx:-114px;--c:#6b4a2f"></i><i style="--x:604px;--w:39px;--t:9.4s;--dl:-7.9s;--dx:-46px;--c:#c49a6c"></i><i style="--x:685px;--w:44px;--t:14.7s;--dl:-8.1s;--dx:43px;--c:#5a3a22"></i><i style="--x:90px;--w:33px;--t:9.3s;--dl:-12.0s;--dx:-12px;--c:#8a5a35"></i><i style="--x:469px;--w:30px;--t:12.2s;--dl:-8.0s;--dx:126px;--c:#a77b4f"></i><i style="--x:875px;--w:31px;--t:9.6s;--dl:-8.0s;--dx:-64px;--c:#6b4a2f"></i><i style="--x:421px;--w:29px;--t:12.3s;--dl:-0.9s;--dx:-130px;--c:#c49a6c"></i><i style="--x:673px;--w:32px;--t:12.0s;--dl:-7.4s;--dx:0px;--c:#5a3a22"></i><i style="--x:516px;--w:44px;--t:14.5s;--dl:-5.1s;--dx:-33px;--c:#8a5a35"></i><i style="--x:853px;--w:31px;--t:13.2s;--dl:-3.4s;--dx:134px;--c:#a77b4f"></i><i style="--x:347px;--w:42px;--t:12.0s;--dl:-4.8s;--dx:69px;--c:#6b4a2f"></i><i style="--x:334px;--w:28px;--t:9.7s;--dl:-5.9s;--dx:15px;--c:#c49a6c"></i></div>
     <div class="flw" data-g="small" style="--d:.6s;right:-6px;top:-6px;width:250px;height:250px"></div>
     <div class="flw" data-g="small" style="--d:.8s;left:-6px;top:-6px;width:250px;height:250px;transform:scaleX(-1)"></div>
     <div class="flw" data-g="small" style="--d:1s;left:-6px;bottom:-6px;width:250px;height:250px;transform:rotate(180deg)"></div>
