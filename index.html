@@ -563,12 +563,12 @@ let soundOn = false, musicUnlocked = false;
 /* une seule source de son : music.mp3 joue du début à la fin (film muet), donc aucun relais entre le film et les pages */
 film.muted = true;
 function syncMusic(force){ const t = isFinite(film.currentTime) ? film.currentTime : 0; if (force || Math.abs(music.currentTime - t) > 0.35){ try { music.currentTime = t; } catch(e){} } }
-function playMusic(){ if (cur === 0) syncMusic(true); const p = music.play(); if (p && p.then) p.then(() => { soundOn = musicUnlocked = true; }).catch(() => {}); return p; }
+function playMusic(){ if (cur === 0) syncMusic(true); const p = music.play(); if (p && p.then) p.then(() => { soundOn = musicUnlocked = true; $('#sndBtn').hidden = true; }).catch(() => {}); return p; }
 function unlockMusic(){ soundOn = true; playMusic(); }
 function musicFromFilm(){ if (!soundOn || !music.paused) return; playMusic(); }
 function openEnv(){ if (cur !== 0) return; film.muted = true; const pr = film.play(); $('#playBtn').hidden = true;
   const mp = music.paused ? playMusic() : null;
-  if (mp && mp.catch) mp.catch(() => { if (!soundOn && cur === 0){ film.pause(); $('#playBtn').hidden = false; } });
+  if (mp && mp.catch) mp.catch(() => { if (!soundOn && cur === 0) $('#sndBtn').hidden = false; });
   if (pr && pr.catch) pr.catch(() => { film.pause(); music.pause(); $('#playBtn').hidden = false; }); }
 function startFilm(){ try { film.currentTime = 0; } catch(e){} openEnv(); }
 film.addEventListener('ended', () => { if (cur === 0) show(1); });
