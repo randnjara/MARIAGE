@@ -1258,7 +1258,7 @@ function watchResponses() {
     window.__RESP = Object.values(latest); applyResp();
     all.filter(r => !r.familyId && !r.applied).forEach(r => updateDoc(r.ref, { applied: true }).catch(() => {}));
     all.filter(r => r.familyId && latest[r.familyId] !== r).forEach(r => deleteDoc(r.ref).catch(() => {}));
-    const shown = all.filter(r => !r.familyId || latest[r.familyId] === r);
+    const shown = all.filter(r => (!r.familyId && String(r.famille || '').trim() !== 'Lien général') || (r.familyId && latest[r.familyId] === r));
     const box = $('#lastResp'); box.hidden = !all.length;
     const ptx = r => r.reponse === 'Vient' ? 'Vient · ' + (r.adultes ?? r.personnes) + ' adulte' + ((r.adultes ?? r.personnes) > 1 ? 's' : '') + (r.enfants ? ', ' + r.enfants + ' enfant' + (r.enfants > 1 ? 's' : '') : '') + (r.navette ? ' · transport ' + r.navette + (r.quartier ? ' (' + esc(r.quartier) + ')' : '') : '') : 'Ne vient pas';
     const when = r => new Date(r.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
