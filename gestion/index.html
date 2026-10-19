@@ -287,7 +287,17 @@ html.gen #s4 .contacts .script{font-size:124px!important}
 html.gen #s4 .contacts .num{font-size:52px;letter-spacing:.02em;font-weight:500;white-space:nowrap}
 html.gen #s4 .maps{margin-top:60px}
 html.gen #s4 .maps a{font-size:34px!important;padding:26px 40px!important;white-space:nowrap;gap:12px}html.gen #s4 .maps a svg{width:40px;height:40px}
-html:not(.gen) #s4 .gx{display:none!important}
+html:not(.gen) #s4 .gcon{display:none!important}
+html:not(.gen) #s4 .col{transform:translateY(-10px)}
+html:not(.gen) #s4 .flw.gx[data-g="top"]{width:500px!important;height:175px!important;margin-left:-250px!important;top:22px!important}
+html:not(.gen) #s4 .flw.gx[data-g="bottom"]{width:440px!important;height:145px!important;margin-left:-220px!important;bottom:22px!important}
+html:not(.gen) #s4 .k-per{margin-top:30px!important;font-size:32px!important}
+html:not(.gen) #s4 .k-per b{font-size:52px;letter-spacing:.06em}
+html:not(.gen) #s4 .cd-t{margin-top:40px}
+html:not(.gen) #s4 .cd{margin-top:18px}
+html:not(.gen) #s4 .rsvp-form{gap:20px;margin-top:34px}
+html:not(.gen) #s4 .contacts{margin-top:56px!important}
+html:not(.gen) #s4 .maps{margin-top:36px}
 html.gen #s4 .ngx{display:none!important}
 .gcon{display:flex;justify-content:center;margin:70px 0 0}
 .gc{display:flex;flex-direction:column;align-items:flex-start;gap:30px}
@@ -371,7 +381,7 @@ const run=()=>document.querySelectorAll('.flw[data-g]').forEach(e=>{if(!e.firstC
     <div class="flw" data-g="small" style="--d:1.2s;right:-6px;bottom:-6px;width:250px;height:250px;transform:scaleY(-1)"></div>
     <div class="col">
       <div class="script rv" style="--d:.4s;font-size:110px;line-height:1.1">Merci de confirmer<br>votre présence</div>
-      <div class="kicker rv k-per" style="--d:.8s;margin-top:24px;font-size:36px">avant le <b style="font-weight:700;color:var(--espresso)">30 octobre 2026</b></div><div class="kicker rv k-gen" style="--d:.8s;margin-top:24px;font-size:36px;line-height:1.5">et le nombre de personnes<br>avant le <b style="font-weight:700;color:var(--espresso)">31 octobre 2026</b><br>sur Messenger ou par appel</div>
+      <div class="kicker rv k-per" style="--d:.8s;margin-top:24px;font-size:36px">avant le <b style="font-weight:700;color:var(--espresso)">31 octobre 2026</b></div><div class="kicker rv k-gen" style="--d:.8s;margin-top:24px;font-size:36px;line-height:1.5">et le nombre de personnes<br>avant le <b style="font-weight:700;color:var(--espresso)">31 octobre 2026</b><br>sur Messenger ou par appel</div>
       <div class="kicker rv cd-t" style="--d:.9s">Le grand jour dans</div>
       <div class="cd rv" style="--d:1.0s"><div><b id="cdD">--</b><span>jours</span></div><div><b id="cdH">--</b><span>heures</span></div><div><b id="cdM">--</b><span>min</span></div><div><b id="cdS">--</b><span>sec</span></div></div>
       <div class="rsvp-form rv" style="--d:1.1s" id="rsvpForm">
@@ -381,7 +391,7 @@ const run=()=>document.querySelectorAll('.flw[data-g]').forEach(e=>{if(!e.firstC
           <div class="srow"><span class="slab">Enfants</span><div class="stepper"><button type="button" id="kMinus" aria-label="Un enfant de moins">−</button><output id="kCnt">0</output><button type="button" id="kPlus" aria-label="Un enfant de plus">+</button></div></div>
           <div class="tot" id="tot" hidden></div>
         </div>
-        <div class="rsvp-pre" id="rsvpPre">Votre réponse sera enregistrée. Vous pouvez encore la modifier jusqu’au <b>30 octobre 2026</b>.</div>
+        <div class="rsvp-pre" id="rsvpPre">Votre réponse sera enregistrée. Vous pouvez encore la modifier jusqu’au <b>31 octobre 2026</b>.</div>
         <a class="btn-main" id="yes" target="_blank" rel="noopener" href="#">Je confirme ma présence</a>
         <a class="btn-ghost" id="no" target="_blank" rel="noopener" href="#">Je ne pourrai pas venir</a>
         <div class="rsvp-note" id="rsvpNote" hidden></div>
@@ -724,9 +734,9 @@ $('#minus').addEventListener('click', e => { e.stopPropagation(); count--; updat
 $('#plus').addEventListener('click', e => { e.stopPropagation(); const max = guest ? guest.s : 20; if (count + kids >= max && kids > 0) kids--; count++; updateRsvp(); });
 $('#kMinus').addEventListener('click', e => { e.stopPropagation(); kids--; updateRsvp(); });
 $('#kPlus').addEventListener('click', e => { e.stopPropagation(); const max = guest ? guest.s : 20; if (count + kids >= max && count > 1) count--; kids++; updateRsvp(); });
-function note(t){ const n = $('#rsvpNote'); n.hidden = false; n.innerHTML = String(t).split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;').split('30 octobre 2026').join('<b>30 octobre 2026</b>'); }
-const DEADLINE = Date.UTC(2026, 9, 30, 21, 0, 0); /* 30 octobre 2026 à minuit, heure de Madagascar */
-const MODIF = ' Vous pouvez encore la modifier jusqu’au 30 octobre 2026, seule votre dernière réponse compte.';
+function note(t){ const n = $('#rsvpNote'); n.hidden = false; n.innerHTML = String(t).split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;').split('31 octobre 2026').join('<b>31 octobre 2026</b>'); }
+const DEADLINE = Date.UTC(2026, 9, 31, 21, 0, 0); /* 31 octobre 2026 à minuit, heure de Madagascar */
+const MODIF = ' Vous pouvez encore la modifier jusqu’au 31 octobre 2026, seule votre dernière réponse compte.';
 const rkey = () => 'rsvp_' + (guest ? (guest.id || guest.n) : 'general');
 const rget = () => { try { return JSON.parse(localStorage.getItem(rkey()) || 'null'); } catch(e){ return null; } };
 const rset = v => { try { localStorage.setItem(rkey(), JSON.stringify(v)); } catch(e){} };
@@ -741,7 +751,7 @@ window.__rsvpInit = () => {
   if (window.__preview || !window.__saveRsvp){ navShow(null); return; }
   const prev = rget(), closed = Date.now() >= DEADLINE;
   ['#stepper','#yes','#no','#howMany'].forEach(q => { $(q).style.display = closed ? 'none' : ''; });
-  if (closed){ note((prev ? rtxt(prev) + ' ' : '') + 'Les réponses sont closes depuis le 30 octobre 2026. Pour toute question, appelez Tsidy ou Njara.'); return; }
+  if (closed){ note((prev ? rtxt(prev) + ' ' : '') + 'Les réponses sont closes depuis le 31 octobre 2026. Pour toute question, appelez Tsidy ou Njara.'); return; }
   if (prev && prev.r === 'Vient' && prev.p) { count = prev.a ?? prev.p; kids = prev.e || 0; updateRsvp(); }
   navShow(prev, true);
 };
@@ -778,7 +788,7 @@ $('#nPlus').addEventListener('click', e => { e.stopPropagation(); ncount++; nUpd
   window.__sending = true; note('Envoi de votre réponse…');
   window.__saveRsvp({ familyId: guest ? guest.id : '', famille: fenc(r), places: guest ? guest.s : 0, reponse: r.r, personnes: r.p, date: Date.now() })
     .then(() => { rset(r); note(thanks); navShow(r); })
-    .catch(() => note(Date.now() >= DEADLINE ? 'Les réponses sont closes depuis le 30 octobre 2026.' : 'L’envoi a échoué. Vérifiez votre connexion et réessayez, ou appelez Tsidy ou Njara.'))
+    .catch(() => note(Date.now() >= DEADLINE ? 'Les réponses sont closes depuis le 31 octobre 2026.' : 'L’envoi a échoué. Vérifiez votre connexion et réessayez, ou appelez Tsidy ou Njara.'))
     .finally(() => { window.__sending = false; });
 }));
 function resetInvite(){
@@ -833,7 +843,7 @@ function atT(f, tid){
 }
 const atTable = tid => families.map(f => [f, atT(f, tid)]).filter(([, n]) => n > 0);
 const invLink = f => GUEST_URL + '?i=' + enc({n:f.name, s:f.seats, id:f.id, ...(f.adults != null ? {a:f.adults, e:f.kids||0} : {})});
-const invText = f => `Bonjour ${f.name},\nNous avons la joie de vous inviter à nos Noces d'Étain (10 ans de mariage) et au baptême de notre fils Andriatsididika Mihaja Kael, le samedi 7 novembre 2026 à 8h.\nVotre invitation : ${invLink(f)}\nMerci de confirmer avant le 30 octobre.\nTsidy & Njara`;
+const invText = f => `Bonjour ${f.name},\nNous avons la joie de vous inviter à nos Noces d'Étain (10 ans de mariage) et au baptême de notre fils Andriatsididika Mihaja Kael, le samedi 7 novembre 2026 à 8h.\nVotre invitation : ${invLink(f)}\nMerci de confirmer avant le 31 octobre.\nTsidy & Njara`;
 
 const ready = {}; let autoDone = false;
 async function autoSync(){ if (autoDone || !ready.f || !ready.t) return; autoDone = true;
