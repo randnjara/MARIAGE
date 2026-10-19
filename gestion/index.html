@@ -632,7 +632,7 @@ let soundOn = false, musicUnlocked = false;
 /* une seule source de son : music.mp3 joue du début à la fin (film muet), donc aucun relais entre le film et les pages */
 film.muted = true;
 function syncMusic(force){ const t = isFinite(film.currentTime) ? film.currentTime : 0; if (force || Math.abs(music.currentTime - t) > 0.35){ try { music.currentTime = t; } catch(e){} } }
-function playMusic(){ if (cur === 0) syncMusic(true); const p = music.play(); if (p && p.then) p.then(() => { soundOn = musicUnlocked = true; $('#sndBtn').hidden = true; }).catch(() => {}); return p; }
+function playMusic(){ if (cur === 0 && music.paused) syncMusic(true); const p = music.play(); if (p && p.then) p.then(() => { soundOn = musicUnlocked = true; $('#sndBtn').hidden = true; }).catch(() => {}); return p; }
 function unlockMusic(){ soundOn = true; playMusic(); }
 function musicFromFilm(){ if (!soundOn || !music.paused) return; playMusic(); }
 function openEnv(){ if (cur !== 0) return; film.muted = true; const pr = film.play(); $('#playBtn').hidden = true;
@@ -643,10 +643,13 @@ function startFilm(){ try { film.currentTime = 0; } catch(e){} openEnv(); }
 film.addEventListener('ended', () => { if (cur === 0) show(1); });
 /* nom de la famille au-dessus de « Vous êtes invités », pendant la page titre du film */
 film.addEventListener('timeupdate', () => { const el = $('#filmName'); if (!el || !guest) return; const tt = film.currentTime; el.classList.toggle('on', tt >= 2.6 && tt < 11.5); });
-/* la musique suit le film tant qu'il joue */
-film.addEventListener('timeupdate', () => { if (cur === 0 && soundOn && !music.paused && !film.paused) syncMusic(false); });
-film.addEventListener('pause', () => setTimeout(() => { if (cur === 0 && !film.ended && film.paused) music.pause(); }, 0));
-film.addEventListener('waiting', () => { if (cur === 0) music.pause(); });
+/* la musique ne saute jamais : c'est le film (muet) qui se recale sur elle, en douceur */
+function filmFollow(){ if (cur !== 0 || music.paused || film.paused || film.seeking || music.currentTime < .2 || !(music.currentTime < (film.duration || 0) - .6)) return;
+  const d = film.currentTime - music.currentTime;
+  if (Math.abs(d) > 1.2){ try { film.currentTime = music.currentTime; } catch(e){} film.playbackRate = 1; }
+  else film.playbackRate = Math.abs(d) < .08 ? 1 : Math.max(.9, Math.min(1.1, 1 - d * .5)); }
+film.addEventListener('timeupdate', filmFollow);
+film.addEventListener('pause', () => setTimeout(() => { if (cur === 0 && !film.ended && film.paused && !film.seeking) music.pause(); }, 0));
 film.addEventListener('playing', () => { if (cur === 0 && soundOn && music.paused) playMusic(); });
 film.addEventListener('error', () => { if (cur === 0) setTimeout(() => cur === 0 && show(1), 1500); }, true);
 $('#playBtn').addEventListener('click', e => { e.stopPropagation(); soundOn = true; unlockMusic(); openEnv(); });
