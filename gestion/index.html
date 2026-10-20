@@ -984,7 +984,7 @@ function planFromWorkbook(wb){
   const num = v => { const x = parseFloat(String(v).replace(',', '.')); return isFinite(x) ? Math.round(x) : 0; };
   const tnames = {};
   grid(tSheet).forEach(r => { const m = ucw(r[0]).match(/^(\d+)\s*[.\-)]\s*(.+)$/); if (m) tnames[+m[1]] = ucw(r[0]); });
-  const fams = [], orphans = [], blocks = [], dups = [];
+  const fams = [], orphans = [], blocks = [], dups = [], noname = [];
   wb.SheetNames.filter(n => n !== tSheet && !/r[ée]cap/i.test(n)).forEach(cat => {
     const g = grid(cat);
     const isT = v => /^TABLE\D{0,7}?\d+\D{0,3}$/i.test(ucw(v));
@@ -1001,10 +1001,11 @@ function planFromWorkbook(wb){
     const ec = hdr.findIndex(h => /^ENFANTS?$/.test(h)), bc = hdr.findIndex(h => /^B[EÉ]B[EÉ]S?$/.test(h)), nc = ac - 1;
     const seen = {};
     for (let i = hr + 1; i < g.length; i++){ const r = g[i]; if (typeof r[nc] === 'number') continue; const nm = ucw(r[nc]);
-      if (!nm || /^(total|famille|ami|amie)$/i.test(nm)) continue;
+      if (!nm){ const n0 = num(r[ac]) + (ec >= 0 ? num(r[ec]) : 0) + (bc >= 0 ? num(r[bc]) : 0); if (n0) noname.push(`${cat}, ligne ${i + 1} : ${n0} place${n0 > 1 ? 's' : ''}`); continue; }
+      if (/^(total|famille|ami|amie)$/i.test(nm)) continue;
       const a = num(r[ac]), e = ec >= 0 ? num(r[ec]) : 0, b = bc >= 0 ? num(r[bc]) : 0; if (!(a + e + b)) continue;
-      const key = nkey(nm); if (seen[key]){ const f0 = seen[key]; f0.adults += a; f0.kids += e + b; f0.bebes += b; f0.seats += a + e + b; dups.push(nm + ' (' + cat + ')'); continue; }
-      const fo = { name: nm, key, cat, adults: a, kids: e + b, bebes: b, seats: a + e + b, s: {}, placed: 0 }; seen[key] = fo; fams.push(fo);
+      let key = nkey(nm), name = nm; if (seen[key]){ let k = 2; while (seen[nkey(nm + ' (' + k + ')')]) k++; name = nm + ' (' + k + ')'; key = nkey(name); dups.push(`${nm} (${cat}, ligne ${i + 1})`); }
+      seen[key] = 1; fams.push({ name, key, cat, adults: a, kids: e + b, bebes: b, seats: a + e + b, s: {}, placed: 0 });
     }
   });
   // un nom écrit sous une table peut venir d'une autre feuille (catégorie) : on le rattache à sa famille
@@ -1020,7 +1021,7 @@ function planFromWorkbook(wb){
   for (const f of fams){ const tl = Object.entries(f.s).sort((x, y) => y[1] - x[1] || x[0] - y[0]);
     f.tableNo = tl.length ? +tl[0][0] : 0; f.tnote = tl.length > 1 ? tl.map(([t, c]) => `table ${t} : ${c}`).join(', ') : ''; f.split = tl.length ? Object.fromEntries(tl) : null;
     delete f.s; delete f.placed; delete f.key; delete f.fromTable; }
-  return { tnames, fams, orphans, dups };
+  return { tnames, fams, orphans, dups, noname };
 }
 
 function loadSheet(k){
@@ -1090,7 +1091,7 @@ async function syncSheet(manual){
     const wb = XLSX.read(new Uint8Array(await r.arrayBuffer()), { type:'array' });
     const P = planFromWorkbook(wb); if (!P || !P.fams.length) throw new Error('feuilles non reconnues');
     const m = await runPlanImport(P);
-    $('#syncInfo').textContent = `Synchronisé à ${new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})} · ${m}` + ` · total Excel : ${P.fams.reduce((t,f)=>t+f.seats,0)} places` + (P.dups.length ? ` · ${P.dups.length} nom(s) écrit(s) 2 fois dans la même feuille, places additionnées : ${P.dups.join(', ')}` : '') + (P.orphans.length ? ` · ${P.orphans.length} nom(s) pris depuis le plan de table (absents de la liste) : ${P.orphans.map(o=>o.name).join(', ')}` : '');
+    $('#syncInfo').textContent = `Synchronisé à ${new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})} · ${m}` + ` · total Excel : ${P.fams.reduce((t,f)=>t+f.seats,0)} places` + (P.dups.length ? ` · ${P.dups.length} nom(s) déjà utilisé(s) dans la même feuille, ajouté(s) avec (2) : ${P.dups.join(', ')}` : '') + (P.noname.length ? ` · ⚠ ligne(s) sans nom, non comptée(s) : ${P.noname.join(' ; ')}` : '') + (P.orphans.length ? ` · ${P.orphans.length} nom(s) pris depuis le plan de table (absents de la liste) : ${P.orphans.map(o=>o.name).join(', ')}` : '');
     if (manual) toast('Gestion mise à jour depuis Google Sheets.');
   } catch(err){
     $('#syncInfo').textContent = 'Synchronisation impossible : ' + (err.message || err) + (id.startsWith('e/') ? '. Vérifiez que le fichier est toujours publié sur le Web.' : '. Utilisez le lien « Publier sur le Web » (cliquez sur le bouton pour le coller).');
