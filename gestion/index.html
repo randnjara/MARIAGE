@@ -257,7 +257,7 @@ body{margin:0;background:var(--espresso);overflow:hidden;font-family:var(--serif
 #replay:focus-visible{outline:4px solid var(--caramel);outline-offset:6px}
 @media (prefers-reduced-motion:reduce){.d{display:none}}
 #film{position:absolute;inset:0;width:1080px;height:1920px;object-fit:cover;background:#f5ecdd}
-#filmName{position:absolute;left:290px;width:500px;top:112px;height:120px;display:flex;align-items:center;justify-content:center;text-align:center;pointer-events:none;opacity:0;transition:opacity .7s ease;font:700 50px/1.05 var(--serif);letter-spacing:.06em;color:#5a3a22;white-space:nowrap;text-shadow:0 0 12px #f8efe2,0 0 6px #f8efe2}
+#filmName{position:absolute;left:260px;width:560px;top:150px;height:130px;display:flex;align-items:center;justify-content:center;text-align:center;pointer-events:none;opacity:0;transition:opacity .7s ease;font:700 64px/1.05 var(--serif);letter-spacing:.06em;color:#5a3a22;white-space:nowrap;text-shadow:0 0 12px #f8efe2,0 0 6px #f8efe2}
 #filmName.wrap{white-space:normal}
 #filmName.on{opacity:1}
 #playBtn{position:absolute;inset:0;width:100%;height:100%;border:0;margin:0;padding:0;background:rgba(40,26,14,.35);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:40px;cursor:pointer;color:#fff;z-index:5}
@@ -320,7 +320,7 @@ html.gen #s4 .maps{margin-top:70px!important;gap:36px!important;margin-left:-70p
 
   <!-- 0. film -->
   <section class="scene" id="s0">
-    <video id="film" playsinline webkit-playsinline preload="metadata" poster="../film.jpg?v=14"><source src="../film.mp4?v=18" type="video/mp4"></video>
+    <video id="film" playsinline webkit-playsinline preload="metadata" poster="../film.jpg?v=14"><source src="../film.mp4?v=26" type="video/mp4"></video>
     <button type="button" id="playBtn" hidden><span class="pb-i">▶</span><span class="pb-t">Touchez pour ouvrir<br>l’invitation</span></button>
     <button type="button" id="skipBtn">Passer ›</button>
     <button type="button" id="sndBtn" hidden>🔊&nbsp; Activer le son</button>
@@ -823,7 +823,7 @@ function startInvite(g, preview){
   document.documentElement.classList.toggle('gen', !guest); /* lien général : pas de formulaire, confirmation par Messenger ou appel */
   document.documentElement.classList.remove('mode-admin'); $('#admin').hidden = true;
   $('#envAddr').hidden = !guest; $('#envName').textContent = guest ? guest.n : '';
-  { const el = $('#filmName'); if (el){ el.textContent = guest ? guest.n : ''; el.classList.remove('on'); let fs = 50; el.style.fontSize = fs + 'px'; el.classList.remove('wrap'); while (fs > 30 && el.scrollWidth > 500){ fs -= 2; el.style.fontSize = fs + 'px'; } if (el.scrollWidth > 500) el.classList.add('wrap'); } }
+  { const el = $('#filmName'); if (el){ el.textContent = guest ? guest.n : ''; el.classList.remove('on'); let fs = 64; el.style.fontSize = fs + 'px'; el.classList.remove('wrap'); while (fs > 34 && el.scrollWidth > 560){ fs -= 2; el.style.fontSize = fs + 'px'; } if (el.scrollWidth > 560) el.classList.add('wrap'); } }
   $('#seatsN').hidden = $('#seatsW').hidden = !guest;
   $('#fourLead').textContent = guest ? 'Nous sommes heureux d’inviter' : 'Nous sommes heureux de vous inviter';
   if (guest){ $('#seatsN').textContent = guest.s; $('#seatsW').textContent = guest.s > 1 ? 'personnes' : 'personne'; }
