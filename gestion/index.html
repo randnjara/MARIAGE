@@ -320,7 +320,7 @@ html.gen #s4 .maps{margin-top:70px!important;gap:36px!important;margin-left:-70p
 
   <!-- 0. film -->
   <section class="scene" id="s0">
-    <video id="film" playsinline webkit-playsinline preload="metadata" poster="../film.jpg?v=14"><source src="../film.mp4?v=26" type="video/mp4"></video>
+    <video id="film" playsinline webkit-playsinline preload="metadata" poster="../film.jpg?v=14"><source src="../film.mp4?v=32" type="video/mp4"></video>
     <button type="button" id="playBtn" hidden><span class="pb-i">▶</span><span class="pb-t">Touchez pour ouvrir<br>l’invitation</span></button>
     <button type="button" id="skipBtn">Passer ›</button>
     <button type="button" id="sndBtn" hidden>🔊&nbsp; Activer le son</button>
@@ -984,7 +984,7 @@ function planFromWorkbook(wb){
   const num = v => { const x = parseFloat(String(v).replace(',', '.')); return isFinite(x) ? Math.round(x) : 0; };
   const tnames = {};
   grid(tSheet).forEach(r => { const m = ucw(r[0]).match(/^(\d+)\s*[.\-)]\s*(.+)$/); if (m) tnames[+m[1]] = ucw(r[0]); });
-  const fams = [], orphans = [], blocks = [];
+  const fams = [], orphans = [], blocks = [], dups = [];
   wb.SheetNames.filter(n => n !== tSheet && !/r[ée]cap/i.test(n)).forEach(cat => {
     const g = grid(cat);
     const isT = v => /^TABLE\D{0,7}?\d+\D{0,3}$/i.test(ucw(v));
@@ -1003,8 +1003,8 @@ function planFromWorkbook(wb){
     for (let i = hr + 1; i < g.length; i++){ const r = g[i]; if (typeof r[nc] === 'number') continue; const nm = ucw(r[nc]);
       if (!nm || /^(total|famille|ami|amie)$/i.test(nm)) continue;
       const a = num(r[ac]), e = ec >= 0 ? num(r[ec]) : 0, b = bc >= 0 ? num(r[bc]) : 0; if (!(a + e + b)) continue;
-      const key = nkey(nm); if (seen[key]) continue; seen[key] = 1;
-      fams.push({ name: nm, key, cat, adults: a, kids: e + b, bebes: b, seats: a + e + b, s: {}, placed: 0 });
+      const key = nkey(nm); if (seen[key]){ const f0 = seen[key]; f0.adults += a; f0.kids += e + b; f0.bebes += b; f0.seats += a + e + b; dups.push(nm + ' (' + cat + ')'); continue; }
+      const fo = { name: nm, key, cat, adults: a, kids: e + b, bebes: b, seats: a + e + b, s: {}, placed: 0 }; seen[key] = fo; fams.push(fo);
     }
   });
   // un nom écrit sous une table peut venir d'une autre feuille (catégorie) : on le rattache à sa famille
@@ -1020,7 +1020,7 @@ function planFromWorkbook(wb){
   for (const f of fams){ const tl = Object.entries(f.s).sort((x, y) => y[1] - x[1] || x[0] - y[0]);
     f.tableNo = tl.length ? +tl[0][0] : 0; f.tnote = tl.length > 1 ? tl.map(([t, c]) => `table ${t} : ${c}`).join(', ') : ''; f.split = tl.length ? Object.fromEntries(tl) : null;
     delete f.s; delete f.placed; delete f.key; delete f.fromTable; }
-  return { tnames, fams, orphans };
+  return { tnames, fams, orphans, dups };
 }
 
 function loadSheet(k){
@@ -1090,7 +1090,7 @@ async function syncSheet(manual){
     const wb = XLSX.read(new Uint8Array(await r.arrayBuffer()), { type:'array' });
     const P = planFromWorkbook(wb); if (!P || !P.fams.length) throw new Error('feuilles non reconnues');
     const m = await runPlanImport(P);
-    $('#syncInfo').textContent = `Synchronisé à ${new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})} · ${m}` + (P.orphans.length ? ` · ${P.orphans.length} nom(s) pris depuis le plan de table (absents de la liste) : ${P.orphans.map(o=>o.name).join(', ')}` : '');
+    $('#syncInfo').textContent = `Synchronisé à ${new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})} · ${m}` + ` · total Excel : ${P.fams.reduce((t,f)=>t+f.seats,0)} places` + (P.dups.length ? ` · ${P.dups.length} nom(s) écrit(s) 2 fois dans la même feuille, places additionnées : ${P.dups.join(', ')}` : '') + (P.orphans.length ? ` · ${P.orphans.length} nom(s) pris depuis le plan de table (absents de la liste) : ${P.orphans.map(o=>o.name).join(', ')}` : '');
     if (manual) toast('Gestion mise à jour depuis Google Sheets.');
   } catch(err){
     $('#syncInfo').textContent = 'Synchronisation impossible : ' + (err.message || err) + (id.startsWith('e/') ? '. Vérifiez que le fichier est toujours publié sur le Web.' : '. Utilisez le lien « Publier sur le Web » (cliquez sur le bouton pour le coller).');
