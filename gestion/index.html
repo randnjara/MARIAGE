@@ -477,6 +477,12 @@ html.mode-admin #wrap{display:none}
 .dtab td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
 .dtab .n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
 .dtab tfoot td{font-weight:600;border-bottom:0;background:rgba(230,212,184,.35)}
+.todo{margin-top:22px;background:rgba(255,253,248,.6);border:1px solid var(--line);border-radius:16px;padding:16px 18px}
+.todoh{display:flex;justify-content:space-between;align-items:baseline;gap:10px}.todoh h3{margin:0}#tCount{font-size:13px;color:var(--caramel)}
+#tForm{display:flex;gap:10px;margin:12px 0 6px}#tForm input{flex:1;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font:inherit;background:#fffdf8}
+#tList{list-style:none;margin:0;padding:0}#tList li{display:flex;align-items:center;gap:12px;padding:10px 2px;border-bottom:1px solid var(--line);font-size:15px;color:var(--espresso)}
+#tList li:last-child{border-bottom:0}#tList input{width:20px;height:20px;accent-color:var(--brown);flex:none}#tList label{flex:1;cursor:pointer}
+#tList li.done label{text-decoration:line-through;opacity:.55}#tList .tdel{border:0;background:none;color:#a33;font-size:20px;cursor:pointer;padding:0 6px}
 .dnote{font-size:12px;color:var(--brown);opacity:.8;margin-top:2px}
 .dleft{color:#9b2c2c;font-weight:600}
 .dpaid{color:#4f6b3a;font-weight:600}
@@ -618,6 +624,9 @@ html.mode-admin #wrap{display:none}
       <button class="a-btn" type="button" id="dAdd">Ajouter une dépense</button>
     </div>
     <div id="depList"></div>
+    <div class="todo"><div class="todoh"><h3>Check-list</h3><span id="tCount"></span></div>
+      <form id="tForm"><input id="tIn" placeholder="ex. Payer le solde du traiteur" maxlength="200"><button class="a-btn" type="submit">Ajouter</button></form>
+      <ul id="tList"></ul></div>
   </section>
 </main>
 
@@ -637,7 +646,7 @@ html.mode-admin #wrap{display:none}
   <h2 id="dTitle">Ajouter une dépense</h2>
   <label class="fld">Poste<input id="dPoste" list="posteList" required placeholder="ex. Salle, Traiteur, Photographe"><datalist id="posteList"><option value="Salle"><option value="Traiteur"><option value="Boissons"><option value="Gâteau"><option value="Décoration"><option value="Fleurs"><option value="Photographe / vidéo"><option value="Musique / DJ"><option value="Tenues"><option value="Église"><option value="Transport"><option value="Invitations"><option value="Autre"></datalist></label>
   <label class="fld">Prestataire (nom, contact)<input id="dPrest" placeholder="ex. Espace Fenitra, 034 00 000 00"></label>
-  <div style="display:flex;gap:10px;flex-wrap:wrap"><label class="fld" style="flex:1 1 140px">Nombre d'invités<input id="dNb" inputmode="numeric" placeholder="ex. 400"></label><label class="fld" style="flex:1 1 180px">Prix unitaire (Ar)<input id="dPu" inputmode="numeric" placeholder="ex. 25 000"></label></div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap"><label class="fld" style="flex:1 1 140px">Nombre d'invités<input id="dNb" inputmode="numeric" placeholder="ex. 400"></label><label class="fld" style="flex:1 1 180px">Prix unitaire (Ar)<input id="dPu" inputmode="numeric" placeholder="ex. 25 000"></label><label class="fld" style="flex:1 1 160px">Frais de transport (Ar)<input id="dTr" inputmode="numeric" placeholder="ex. 100 000"></label></div>
   <div style="display:flex;gap:10px;flex-wrap:wrap"><label class="fld" style="flex:1 1 180px">Prix total (Ar)<input id="dTotal" inputmode="numeric" placeholder="ex. 2 500 000"></label><label class="fld" style="flex:1 1 160px">Date de réservation<input id="dDate" type="date"></label></div>
   <div style="display:flex;gap:10px;flex-wrap:wrap"><label class="fld" style="flex:1 1 180px">Acompte versé (Ar)<input id="dAcompte" inputmode="numeric" placeholder="ex. 1 000 000"></label><label class="fld" style="flex:1 1 160px">Date de l'acompte<input id="dDateAc" type="date"></label></div>
   <label class="fld">Note (facultatif)<input id="dNote" placeholder="ex. solde à payer le jour J"></label>
@@ -907,6 +916,7 @@ async function startAdmin(){
   db.collection('tables').onSnapshot(s => { tables = s.docs.map(d => ({ id:d.id, ...d.data() })).sort((a,b)=>(a.order||0)-(b.order||0)); render(); ready.t = 1; autoSync(); }, fail);
   const depBtn = document.querySelector('button[data-tab="dep"]'); depBtn.hidden = !window.__owner;
   if (window.__owner) db.collection('depenses').onSnapshot(s => { depenses = s.docs.map(d => ({ id:d.id, ...d.data() })); renderDep(); }, fail);
+  if (window.__owner) db.collection('taches').onSnapshot(s => { taches = s.docs.map(d => ({ id:d.id, ...d.data() })); renderTodo(); }, fail);
   window.__api.use('downloads').then(d => { downloads = d; $('#aExport').hidden = !d; $('#dExport').hidden = !d; });
 }
 const fdoc = id => db.collection('families').doc(id);
@@ -1297,7 +1307,16 @@ $('#tAuto').addEventListener('click', async () => {
 });
 
 /* dépenses */
-let depenses = [], depId = null, depDelArmed = false;
+let depenses = [], depId = null, depDelArmed = false, taches = [];
+function renderTodo(){
+  const L = taches.slice().sort((a, b) => (!!a.done - !!b.done) || (a.created || 0) - (b.created || 0)), n = taches.filter(t => t.done).length;
+  $('#tCount').textContent = taches.length ? `${n} fait${n > 1 ? 's' : ''} sur ${taches.length}` : '';
+  $('#tList').innerHTML = L.length ? L.map(t => `<li class="${t.done ? 'done' : ''}"><input type="checkbox" id="t_${t.id}" data-tdone="${t.id}" ${t.done ? 'checked' : ''}><label for="t_${t.id}">${esc(t.text)}</label><button class="tdel" type="button" data-tdel="${t.id}" title="Supprimer">×</button></li>`).join('') : '<li style="opacity:.6">Rien pour l’instant : ajoutez ce qu’il ne faut pas oublier.</li>';
+}
+$('#tForm').addEventListener('submit', async e => { e.preventDefault(); const v = $('#tIn').value.trim(); if (!v || !db) return; $('#tIn').value = '';
+  try { await db.collection('taches').add({ text: v, done: false, created: Date.now() }); } catch(err){ toast('Enregistrement refusé (règles Firebase à mettre à jour)'); } });
+$('#tList').addEventListener('change', e => { const id = e.target.dataset.tdone; if (id) db.collection('taches').doc(id).update({ done: e.target.checked }).catch(() => toast('Modification refusée')); });
+$('#tList').addEventListener('click', e => { const id = e.target.closest('[data-tdel]')?.dataset.tdel; if (id && confirm('Supprimer cette tâche ?')) db.collection('taches').doc(id).delete().catch(() => toast('Suppression refusée')); });
 const ar = v => Math.round(+v || 0).toLocaleString('fr-FR').replace(/ | /g, ' ') + ' Ar';
 const amt = v => { const x = parseFloat(String(v ?? '').replace(/[^\d,.-]/g, '').replace(',', '.')); return isFinite(x) ? Math.round(x) : 0; };
 const dfr = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', { day:'numeric', month:'short', year:'numeric' }) : '—';
@@ -1307,27 +1326,30 @@ function renderDep(){
   $('#dStats').innerHTML = [[ar(T.t), 'Total des dépenses'], [ar(T.p), 'Acomptes versés'], [ar(Math.max(0, T.t - T.p)), 'Reste à payer'], [depenses.length, 'Postes']].map(([n, l]) => `<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('');
   const q = norm($('#dq').value), L = depSorted().filter(d => !q || norm(`${d.poste} ${d.prest} ${d.note}`).includes(q));
   $('#depList').innerHTML = !depenses.length ? '<div class="empty"><h3>Aucune dépense pour l’instant</h3>Cliquez sur « Ajouter une dépense » pour noter la salle, le traiteur, le photographe…</div>'
-    : `<div class="dwrap"><table class="dtab"><thead><tr><th>Poste</th><th>Prestataire</th><th>Réservé le</th><th class="n">Nb invités</th><th class="n">Prix unitaire</th><th class="n">Prix total</th><th class="n">Acompte</th><th>Acompte le</th><th class="n">Reste</th><th></th></tr></thead><tbody>${L.map(d => { const r = Math.max(0, (d.total || 0) - (d.acompte || 0));
-      return `<tr><td><b>${esc(d.poste)}</b>${d.note ? `<div class="dnote">${esc(d.note)}</div>` : ''}</td><td>${esc(d.prest || '')}</td><td>${dfr(d.dateResa)}</td><td class="n">${d.nb || '—'}</td><td class="n">${d.pu ? ar(d.pu) : '—'}</td><td class="n">${ar(d.total)}</td><td class="n">${d.acompte ? ar(d.acompte) : '—'}</td><td>${d.acompte ? dfr(d.dateAcompte) : '—'}</td><td class="n">${r ? `<span class="dleft">${ar(r)}</span>` : '<span class="dpaid">Payé</span>'}</td><td><button class="a-btn sec sm" type="button" data-dep="${d.id}">Modifier</button></td></tr>`; }).join('')}</tbody><tfoot><tr><td colspan="5">Total</td><td class="n">${ar(T.t)}</td><td class="n">${ar(T.p)}</td><td></td><td class="n">${ar(Math.max(0, T.t - T.p))}</td><td></td></tr></tfoot></table></div>`;
+    : `<div class="dwrap"><table class="dtab"><thead><tr><th>Poste</th><th>Prestataire</th><th>Réservé le</th><th class="n">Nb invités</th><th class="n">Prix unitaire</th><th class="n">Transport</th><th class="n">Prix total</th><th class="n">Acompte</th><th>Acompte le</th><th class="n">Reste</th><th></th></tr></thead><tbody>${L.map(d => { const r = Math.max(0, (d.total || 0) - (d.acompte || 0));
+      return `<tr><td><b>${esc(d.poste)}</b>${d.note ? `<div class="dnote">${esc(d.note)}</div>` : ''}</td><td>${esc(d.prest || '')}</td><td>${dfr(d.dateResa)}</td><td class="n">${d.nb || '—'}</td><td class="n">${d.pu ? ar(d.pu) : '—'}</td><td class="n">${d.tr ? ar(d.tr) : '—'}</td><td class="n">${ar(d.total)}</td><td class="n">${d.acompte ? ar(d.acompte) : '—'}</td><td>${d.acompte ? dfr(d.dateAcompte) : '—'}</td><td class="n">${r ? `<span class="dleft">${ar(r)}</span>` : '<span class="dpaid">Payé</span>'}</td><td><button class="a-btn sec sm" type="button" data-dep="${d.id}">Modifier</button></td></tr>`; }).join('')}</tbody><tfoot><tr><td colspan="6">Total</td><td class="n">${ar(T.t)}</td><td class="n">${ar(T.p)}</td><td></td><td class="n">${ar(Math.max(0, T.t - T.p))}</td><td></td></tr></tfoot></table></div>`;
 }
 function depReste(){ const t = amt($('#dTotal').value), a = amt($('#dAcompte').value); $('#dReste').textContent = t ? `Reste à payer : ${ar(Math.max(0, t - a))}` : ''; }
 function openDep(d){
   depId = d ? d.id : null; depDelArmed = false;
   $('#dTitle').textContent = d ? 'Modifier la dépense' : 'Ajouter une dépense';
-  $('#dPoste').value = d?.poste || ''; $('#dPrest').value = d?.prest || ''; $('#dTotal').value = d?.total ? ar(d.total).replace(' Ar', '') : ''; $('#dDate').value = d?.dateResa || ''; $('#dNb').value = d?.nb || ''; $('#dPu').value = d?.pu ? ar(d.pu).replace(' Ar', '') : '';
+  $('#dPoste').value = d?.poste || ''; $('#dPrest').value = d?.prest || ''; $('#dTotal').value = d?.total ? ar(d.total).replace(' Ar', '') : ''; $('#dDate').value = d?.dateResa || ''; $('#dNb').value = d?.nb || ''; $('#dPu').value = d?.pu ? ar(d.pu).replace(' Ar', '') : ''; $('#dTr').value = d?.tr ? ar(d.tr).replace(' Ar', '') : ''; depBase = d ? Math.max(0, (d.total || 0) - (d.tr || 0)) : 0;
   $('#dAcompte').value = d?.acompte ? ar(d.acompte).replace(' Ar', '') : ''; $('#dDateAc').value = d?.dateAcompte || ''; $('#dNote').value = d?.note || '';
   $('#dDel').hidden = !d; $('#dDel').textContent = 'Supprimer'; depReste(); $('#ovDep').hidden = false; $('#dPoste').focus();
 }
 $('#dAdd').addEventListener('click', () => openDep(null));
 $('#dq').addEventListener('input', renderDep);
 $('#dTotal').addEventListener('input', depReste);
-function depCalc(){ const n = amt($('#dNb').value), u = amt($('#dPu').value); if (n && u){ $('#dTotal').value = ar(n * u).replace(' Ar', ''); depReste(); } }
-$('#dNb').addEventListener('input', depCalc); $('#dPu').addEventListener('input', depCalc); $('#dAcompte').addEventListener('input', depReste);
+// prix total = nombre d'invités × prix unitaire (ou montant saisi) + frais de transport
+let depBase = 0;
+function depCalc(){ const n = amt($('#dNb').value), u = amt($('#dPu').value), base = n && u ? n * u : depBase, t = base + amt($('#dTr').value); $('#dTotal').value = t ? ar(t).replace(' Ar', '') : ''; depReste(); }
+$('#dNb').addEventListener('input', depCalc); $('#dPu').addEventListener('input', depCalc); $('#dTr').addEventListener('input', depCalc);
+$('#dTotal').addEventListener('input', () => { depBase = Math.max(0, amt($('#dTotal').value) - amt($('#dTr').value)); }); $('#dAcompte').addEventListener('input', depReste);
 $('#dCancel').addEventListener('click', () => $('#ovDep').hidden = true);
 $('#depList').addEventListener('click', e => { const b = e.target.closest('[data-dep]'); if (b) openDep(depenses.find(d => d.id === b.dataset.dep)); });
 $('#fDep').addEventListener('submit', async e => {
   e.preventDefault(); if (!db) return;
-  const data = { poste: $('#dPoste').value.trim(), prest: $('#dPrest').value.trim(), nb: amt($('#dNb').value), pu: amt($('#dPu').value), total: amt($('#dTotal').value), dateResa: $('#dDate').value, acompte: amt($('#dAcompte').value), dateAcompte: $('#dDateAc').value, note: $('#dNote').value.trim(), updated: Date.now() };
+  const data = { poste: $('#dPoste').value.trim(), prest: $('#dPrest').value.trim(), nb: amt($('#dNb').value), pu: amt($('#dPu').value), tr: amt($('#dTr').value), total: amt($('#dTotal').value), dateResa: $('#dDate').value, acompte: amt($('#dAcompte').value), dateAcompte: $('#dDateAc').value, note: $('#dNote').value.trim(), updated: Date.now() };
   if (!data.poste) return;
   try { if (depId) await db.collection('depenses').doc(depId).update(data); else await db.collection('depenses').add({ ...data, created: Date.now() }); $('#ovDep').hidden = true; }
   catch(err){ toast('Enregistrement refusé : ' + (err.message || err.code) + ' (règles Firebase à mettre à jour)'); }
@@ -1338,7 +1360,7 @@ $('#dDel').addEventListener('click', async () => {
 });
 $('#dExport').addEventListener('click', async () => {
   if (!downloads || !window.XLSX) return;
-  const rows = depSorted().map(d => ({ 'Poste': d.poste, 'Prestataire': d.prest || '', 'Date de réservation': d.dateResa || '', 'Nombre d\'invités': d.nb || '', 'Prix unitaire (Ar)': d.pu || '', 'Prix total (Ar)': d.total || 0, 'Acompte versé (Ar)': d.acompte || 0, "Date de l'acompte": d.dateAcompte || '', 'Reste à payer (Ar)': Math.max(0, (d.total || 0) - (d.acompte || 0)), 'Note': d.note || '' }));
+  const rows = depSorted().map(d => ({ 'Poste': d.poste, 'Prestataire': d.prest || '', 'Date de réservation': d.dateResa || '', 'Nombre d\'invités': d.nb || '', 'Prix unitaire (Ar)': d.pu || '', 'Frais de transport (Ar)': d.tr || '', 'Prix total (Ar)': d.total || 0, 'Acompte versé (Ar)': d.acompte || 0, "Date de l'acompte": d.dateAcompte || '', 'Reste à payer (Ar)': Math.max(0, (d.total || 0) - (d.acompte || 0)), 'Note': d.note || '' }));
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows.length ? rows : [{ Poste: '' }]), 'Dépenses');
   const out = XLSX.write(wb, { bookType:'xlsx', type:'array' }); try { await downloads.save({ filename: 'depenses-noces-bapteme.xlsx', data: new Blob([out], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }) }); } catch(e){}
 });
