@@ -637,7 +637,8 @@ html.mode-admin #wrap{display:none}
   <h2 id="dTitle">Ajouter une dépense</h2>
   <label class="fld">Poste<input id="dPoste" list="posteList" required placeholder="ex. Salle, Traiteur, Photographe"><datalist id="posteList"><option value="Salle"><option value="Traiteur"><option value="Boissons"><option value="Gâteau"><option value="Décoration"><option value="Fleurs"><option value="Photographe / vidéo"><option value="Musique / DJ"><option value="Tenues"><option value="Église"><option value="Transport"><option value="Invitations"><option value="Autre"></datalist></label>
   <label class="fld">Prestataire (nom, contact)<input id="dPrest" placeholder="ex. Espace Fenitra, 034 00 000 00"></label>
-  <div style="display:flex;gap:10px;flex-wrap:wrap"><label class="fld" style="flex:1 1 180px">Montant total (Ar)<input id="dTotal" inputmode="numeric" placeholder="ex. 2 500 000"></label><label class="fld" style="flex:1 1 160px">Date de réservation<input id="dDate" type="date"></label></div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap"><label class="fld" style="flex:1 1 140px">Nombre d'invités<input id="dNb" inputmode="numeric" placeholder="ex. 400"></label><label class="fld" style="flex:1 1 180px">Prix unitaire (Ar)<input id="dPu" inputmode="numeric" placeholder="ex. 25 000"></label></div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap"><label class="fld" style="flex:1 1 180px">Prix total (Ar)<input id="dTotal" inputmode="numeric" placeholder="ex. 2 500 000"></label><label class="fld" style="flex:1 1 160px">Date de réservation<input id="dDate" type="date"></label></div>
   <div style="display:flex;gap:10px;flex-wrap:wrap"><label class="fld" style="flex:1 1 180px">Acompte versé (Ar)<input id="dAcompte" inputmode="numeric" placeholder="ex. 1 000 000"></label><label class="fld" style="flex:1 1 160px">Date de l'acompte<input id="dDateAc" type="date"></label></div>
   <label class="fld">Note (facultatif)<input id="dNote" placeholder="ex. solde à payer le jour J"></label>
   <p id="dReste" style="margin:4px 0 12px;font-size:14px;color:var(--brown)"></p>
@@ -904,7 +905,8 @@ async function startAdmin(){
   const fail = e => toast('Lecture impossible : ' + (e?.message || 'réessayez plus tard'));
   db.collection('families').onSnapshot(s => { families = s.docs.map(d => ({ id:d.id, ...d.data() })).sort((a,b)=>String(a.name).localeCompare(String(b.name),'fr')); render(); ready.f = 1; autoSync(); }, fail);
   db.collection('tables').onSnapshot(s => { tables = s.docs.map(d => ({ id:d.id, ...d.data() })).sort((a,b)=>(a.order||0)-(b.order||0)); render(); ready.t = 1; autoSync(); }, fail);
-  db.collection('depenses').onSnapshot(s => { depenses = s.docs.map(d => ({ id:d.id, ...d.data() })); renderDep(); }, fail);
+  const depBtn = document.querySelector('button[data-tab="dep"]'); depBtn.hidden = !window.__owner;
+  if (window.__owner) db.collection('depenses').onSnapshot(s => { depenses = s.docs.map(d => ({ id:d.id, ...d.data() })); renderDep(); }, fail);
   window.__api.use('downloads').then(d => { downloads = d; $('#aExport').hidden = !d; $('#dExport').hidden = !d; });
 }
 const fdoc = id => db.collection('families').doc(id);
@@ -1305,25 +1307,27 @@ function renderDep(){
   $('#dStats').innerHTML = [[ar(T.t), 'Total des dépenses'], [ar(T.p), 'Acomptes versés'], [ar(Math.max(0, T.t - T.p)), 'Reste à payer'], [depenses.length, 'Postes']].map(([n, l]) => `<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('');
   const q = norm($('#dq').value), L = depSorted().filter(d => !q || norm(`${d.poste} ${d.prest} ${d.note}`).includes(q));
   $('#depList').innerHTML = !depenses.length ? '<div class="empty"><h3>Aucune dépense pour l’instant</h3>Cliquez sur « Ajouter une dépense » pour noter la salle, le traiteur, le photographe…</div>'
-    : `<div class="dwrap"><table class="dtab"><thead><tr><th>Poste</th><th>Prestataire</th><th>Réservé le</th><th class="n">Montant</th><th class="n">Acompte</th><th>Acompte le</th><th class="n">Reste</th><th></th></tr></thead><tbody>${L.map(d => { const r = Math.max(0, (d.total || 0) - (d.acompte || 0));
-      return `<tr><td><b>${esc(d.poste)}</b>${d.note ? `<div class="dnote">${esc(d.note)}</div>` : ''}</td><td>${esc(d.prest || '')}</td><td>${dfr(d.dateResa)}</td><td class="n">${ar(d.total)}</td><td class="n">${d.acompte ? ar(d.acompte) : '—'}</td><td>${d.acompte ? dfr(d.dateAcompte) : '—'}</td><td class="n">${r ? `<span class="dleft">${ar(r)}</span>` : '<span class="dpaid">Payé</span>'}</td><td><button class="a-btn sec sm" type="button" data-dep="${d.id}">Modifier</button></td></tr>`; }).join('')}</tbody><tfoot><tr><td colspan="3">Total</td><td class="n">${ar(T.t)}</td><td class="n">${ar(T.p)}</td><td></td><td class="n">${ar(Math.max(0, T.t - T.p))}</td><td></td></tr></tfoot></table></div>`;
+    : `<div class="dwrap"><table class="dtab"><thead><tr><th>Poste</th><th>Prestataire</th><th>Réservé le</th><th class="n">Nb invités</th><th class="n">Prix unitaire</th><th class="n">Prix total</th><th class="n">Acompte</th><th>Acompte le</th><th class="n">Reste</th><th></th></tr></thead><tbody>${L.map(d => { const r = Math.max(0, (d.total || 0) - (d.acompte || 0));
+      return `<tr><td><b>${esc(d.poste)}</b>${d.note ? `<div class="dnote">${esc(d.note)}</div>` : ''}</td><td>${esc(d.prest || '')}</td><td>${dfr(d.dateResa)}</td><td class="n">${d.nb || '—'}</td><td class="n">${d.pu ? ar(d.pu) : '—'}</td><td class="n">${ar(d.total)}</td><td class="n">${d.acompte ? ar(d.acompte) : '—'}</td><td>${d.acompte ? dfr(d.dateAcompte) : '—'}</td><td class="n">${r ? `<span class="dleft">${ar(r)}</span>` : '<span class="dpaid">Payé</span>'}</td><td><button class="a-btn sec sm" type="button" data-dep="${d.id}">Modifier</button></td></tr>`; }).join('')}</tbody><tfoot><tr><td colspan="5">Total</td><td class="n">${ar(T.t)}</td><td class="n">${ar(T.p)}</td><td></td><td class="n">${ar(Math.max(0, T.t - T.p))}</td><td></td></tr></tfoot></table></div>`;
 }
 function depReste(){ const t = amt($('#dTotal').value), a = amt($('#dAcompte').value); $('#dReste').textContent = t ? `Reste à payer : ${ar(Math.max(0, t - a))}` : ''; }
 function openDep(d){
   depId = d ? d.id : null; depDelArmed = false;
   $('#dTitle').textContent = d ? 'Modifier la dépense' : 'Ajouter une dépense';
-  $('#dPoste').value = d?.poste || ''; $('#dPrest').value = d?.prest || ''; $('#dTotal').value = d?.total ? ar(d.total).replace(' Ar', '') : ''; $('#dDate').value = d?.dateResa || '';
+  $('#dPoste').value = d?.poste || ''; $('#dPrest').value = d?.prest || ''; $('#dTotal').value = d?.total ? ar(d.total).replace(' Ar', '') : ''; $('#dDate').value = d?.dateResa || ''; $('#dNb').value = d?.nb || ''; $('#dPu').value = d?.pu ? ar(d.pu).replace(' Ar', '') : '';
   $('#dAcompte').value = d?.acompte ? ar(d.acompte).replace(' Ar', '') : ''; $('#dDateAc').value = d?.dateAcompte || ''; $('#dNote').value = d?.note || '';
   $('#dDel').hidden = !d; $('#dDel').textContent = 'Supprimer'; depReste(); $('#ovDep').hidden = false; $('#dPoste').focus();
 }
 $('#dAdd').addEventListener('click', () => openDep(null));
 $('#dq').addEventListener('input', renderDep);
-$('#dTotal').addEventListener('input', depReste); $('#dAcompte').addEventListener('input', depReste);
+$('#dTotal').addEventListener('input', depReste);
+function depCalc(){ const n = amt($('#dNb').value), u = amt($('#dPu').value); if (n && u){ $('#dTotal').value = ar(n * u).replace(' Ar', ''); depReste(); } }
+$('#dNb').addEventListener('input', depCalc); $('#dPu').addEventListener('input', depCalc); $('#dAcompte').addEventListener('input', depReste);
 $('#dCancel').addEventListener('click', () => $('#ovDep').hidden = true);
 $('#depList').addEventListener('click', e => { const b = e.target.closest('[data-dep]'); if (b) openDep(depenses.find(d => d.id === b.dataset.dep)); });
 $('#fDep').addEventListener('submit', async e => {
   e.preventDefault(); if (!db) return;
-  const data = { poste: $('#dPoste').value.trim(), prest: $('#dPrest').value.trim(), total: amt($('#dTotal').value), dateResa: $('#dDate').value, acompte: amt($('#dAcompte').value), dateAcompte: $('#dDateAc').value, note: $('#dNote').value.trim(), updated: Date.now() };
+  const data = { poste: $('#dPoste').value.trim(), prest: $('#dPrest').value.trim(), nb: amt($('#dNb').value), pu: amt($('#dPu').value), total: amt($('#dTotal').value), dateResa: $('#dDate').value, acompte: amt($('#dAcompte').value), dateAcompte: $('#dDateAc').value, note: $('#dNote').value.trim(), updated: Date.now() };
   if (!data.poste) return;
   try { if (depId) await db.collection('depenses').doc(depId).update(data); else await db.collection('depenses').add({ ...data, created: Date.now() }); $('#ovDep').hidden = true; }
   catch(err){ toast('Enregistrement refusé : ' + (err.message || err.code) + ' (règles Firebase à mettre à jour)'); }
@@ -1334,7 +1338,7 @@ $('#dDel').addEventListener('click', async () => {
 });
 $('#dExport').addEventListener('click', async () => {
   if (!downloads || !window.XLSX) return;
-  const rows = depSorted().map(d => ({ 'Poste': d.poste, 'Prestataire': d.prest || '', 'Date de réservation': d.dateResa || '', 'Montant total (Ar)': d.total || 0, 'Acompte versé (Ar)': d.acompte || 0, "Date de l'acompte": d.dateAcompte || '', 'Reste à payer (Ar)': Math.max(0, (d.total || 0) - (d.acompte || 0)), 'Note': d.note || '' }));
+  const rows = depSorted().map(d => ({ 'Poste': d.poste, 'Prestataire': d.prest || '', 'Date de réservation': d.dateResa || '', 'Nombre d\'invités': d.nb || '', 'Prix unitaire (Ar)': d.pu || '', 'Prix total (Ar)': d.total || 0, 'Acompte versé (Ar)': d.acompte || 0, "Date de l'acompte": d.dateAcompte || '', 'Reste à payer (Ar)': Math.max(0, (d.total || 0) - (d.acompte || 0)), 'Note': d.note || '' }));
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows.length ? rows : [{ Poste: '' }]), 'Dépenses');
   const out = XLSX.write(wb, { bookType:'xlsx', type:'array' }); try { await downloads.save({ filename: 'depenses-noces-bapteme.xlsx', data: new Blob([out], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }) }); } catch(e){}
 });
@@ -1430,6 +1434,7 @@ function watchResponses() {
 onAuthStateChanged(auth, u => {
   if (!u) { $('#login').hidden = false; return; }
   $('#login').hidden = true;
+  window.__owner = String(u.email || '').toLowerCase() === 'randnjara@gmail.com';
   if (!started) { started = true; window.__startAdmin(); watchResponses(); }
 });
 $('#gLogin').addEventListener('click', () => signInWithPopup(auth, new GoogleAuthProvider()).catch(e => $('#lErr').textContent = 'Connexion impossible (' + e.code + ').'));
