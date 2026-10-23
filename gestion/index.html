@@ -472,10 +472,10 @@ html.mode-admin #wrap{display:none}
 .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
 .dstats .stat b{font-size:28px}
 .dwrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:14px}
-.dtab{width:100%;border-collapse:collapse;font-size:14px;color:var(--espresso)}
-.dtab th{text-align:left;font-weight:500;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--caramel);padding:12px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
-.dtab td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
-.dtab .n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.dtab{width:100%;border-collapse:collapse;font-size:13px;color:var(--espresso)}
+.dtab th{text-align:left;font-weight:500;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--caramel);padding:10px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+.dtab td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+.dtab td:first-child,.dtab th:first-child{padding-left:12px}.dtab .n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
 .dtab tfoot td{font-weight:600;border-bottom:0;background:rgba(230,212,184,.35)}
 .todo{margin-top:22px;background:rgba(255,253,248,.6);border:1px solid var(--line);border-radius:16px;padding:16px 18px}
 .todoh{display:flex;justify-content:space-between;align-items:baseline;gap:10px}.todoh h3{margin:0}#tCount{font-size:13px;color:var(--caramel)}
@@ -1326,8 +1326,8 @@ function renderDep(){
   $('#dStats').innerHTML = [[ar(T.t), 'Total des dépenses'], [ar(T.p), 'Acomptes versés'], [ar(Math.max(0, T.t - T.p)), 'Reste à payer'], [depenses.length, 'Postes']].map(([n, l]) => `<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('');
   const q = norm($('#dq').value), L = depSorted().filter(d => !q || norm(`${d.poste} ${d.prest} ${d.note}`).includes(q));
   $('#depList').innerHTML = !depenses.length ? '<div class="empty"><h3>Aucune dépense pour l’instant</h3>Cliquez sur « Ajouter une dépense » pour noter la salle, le traiteur, le photographe…</div>'
-    : `<div class="dwrap"><table class="dtab"><thead><tr><th>Poste</th><th>Prestataire</th><th>Réservé le</th><th class="n">Nb invités</th><th class="n">Prix unitaire</th><th class="n">Transport</th><th class="n">Prix total</th><th class="n">Acompte</th><th>Acompte le</th><th class="n">Reste</th><th></th></tr></thead><tbody>${L.map(d => { const r = Math.max(0, (d.total || 0) - (d.acompte || 0));
-      return `<tr><td><b>${esc(d.poste)}</b>${d.note ? `<div class="dnote">${esc(d.note)}</div>` : ''}</td><td>${esc(d.prest || '')}</td><td>${dfr(d.dateResa)}</td><td class="n">${d.nb || '—'}</td><td class="n">${d.pu ? ar(d.pu) : '—'}</td><td class="n">${d.tr ? ar(d.tr) : '—'}</td><td class="n">${ar(d.total)}</td><td class="n">${d.acompte ? ar(d.acompte) : '—'}</td><td>${d.acompte ? dfr(d.dateAcompte) : '—'}</td><td class="n">${r ? `<span class="dleft">${ar(r)}</span>` : '<span class="dpaid">Payé</span>'}</td><td><button class="a-btn sec sm" type="button" data-dep="${d.id}">Modifier</button></td></tr>`; }).join('')}</tbody><tfoot><tr><td colspan="6">Total</td><td class="n">${ar(T.t)}</td><td class="n">${ar(T.p)}</td><td></td><td class="n">${ar(Math.max(0, T.t - T.p))}</td><td></td></tr></tfoot></table></div>`;
+    : `<div class="dwrap"><table class="dtab"><thead><tr><th></th><th>Poste</th><th>Prestataire</th><th>Réservé le</th><th class="n">Nb invités</th><th class="n">Prix unitaire</th><th class="n">Transport</th><th class="n">Prix total</th><th class="n">Acompte</th><th>Acompte le</th><th class="n">Reste</th></tr></thead><tbody>${L.map(d => { const r = Math.max(0, (d.total || 0) - (d.acompte || 0));
+      return `<tr><td><button class="a-btn sec sm" type="button" data-dep="${d.id}">Modifier</button></td><td><b>${esc(d.poste)}</b>${d.note ? `<div class="dnote">${esc(d.note)}</div>` : ''}</td><td>${esc(d.prest || '')}</td><td>${dfr(d.dateResa)}</td><td class="n">${d.nb || '—'}</td><td class="n">${d.pu ? ar(d.pu) : '—'}</td><td class="n">${d.tr ? ar(d.tr) : '—'}</td><td class="n">${ar(d.total)}</td><td class="n">${d.acompte ? ar(d.acompte) : '—'}</td><td>${d.acompte ? dfr(d.dateAcompte) : '—'}</td><td class="n">${r ? `<span class="dleft">${ar(r)}</span>` : '<span class="dpaid">Payé</span>'}</td></tr>`; }).join('')}</tbody><tfoot><tr><td colspan="7">Total</td><td class="n">${ar(T.t)}</td><td class="n">${ar(T.p)}</td><td></td><td class="n">${ar(Math.max(0, T.t - T.p))}</td></tr></tfoot></table></div>`;
 }
 function depReste(){ const t = amt($('#dTotal').value), a = amt($('#dAcompte').value); $('#dReste').textContent = t ? `Reste à payer : ${ar(Math.max(0, t - a))}` : ''; }
 function openDep(d){
