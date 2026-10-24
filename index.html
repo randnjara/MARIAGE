@@ -641,8 +641,6 @@ function openEnv(){ if (cur !== 0) return; film.muted = true; const pr = film.pl
   if (pr && pr.catch) pr.catch(() => { film.pause(); music.pause(); $('#playBtn').hidden = false; }); }
 function startFilm(){ try { film.currentTime = 0; } catch(e){} openEnv(); }
 film.addEventListener('ended', () => { if (cur === 0) show(1); });
-/* nom de la famille au-dessus de « Vous êtes invités », pendant la page titre du film */
-film.addEventListener('timeupdate', () => { const el = $('#filmName'); if (!el || !guest) return; const tt = film.currentTime; el.classList.toggle('on', tt >= 2.6 && tt < 11.5); });
 /* la musique ne saute jamais : c'est le film (muet) qui se recale sur elle, en douceur */
 function filmFollow(){ if (cur !== 0 || music.paused || film.paused || film.seeking || music.currentTime < .2 || !(music.currentTime < (film.duration || 0) - .6)) return;
   const d = film.currentTime - music.currentTime;
