@@ -545,7 +545,7 @@ html.mode-admin #wrap{display:none}
 .talert{background:#fbe9e6;border:1px solid #d9a39a;color:#8a2a1c;border-radius:12px;padding:12px 16px;margin-bottom:14px;font:14px/1.5 var(--sans)}.talert b{font-weight:600}
 .tcard.bad{border:2px solid #c0392b;background:#fdf1ef}.tcard.bad .meta span:first-child{color:#c0392b;font-weight:600}
 #unassigned{display:block}
-#lastResp:not([hidden]){display:block}#lastResp ul{display:flex;flex-direction:column;gap:6px}#lastResp li{align-items:center;flex-wrap:wrap}
+#lastResp:not([hidden]),#viewHist:not([hidden]){display:block}#viewHist ul{display:flex;flex-direction:column;gap:6px;list-style:none;padding:0;margin:0}#viewHist li{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:14px;border-bottom:1px solid var(--line);padding:6px 0}#lastResp ul{display:flex;flex-direction:column;gap:6px}#lastResp li{align-items:center;flex-wrap:wrap}
 .tcard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
 .tcard .row{display:flex;gap:8px;align-items:center}
 .tcard .row input.tname{flex:1;font:600 18px var(--serif)}
@@ -781,7 +781,8 @@ $('#back').addEventListener('click', e => { e.stopPropagation(); startAdmin(); }
   tick(); setInterval(tick,1000); })();
 const m = location.search.match(/[?&]i=([A-Za-z0-9_-]+)/) || location.hash.match(/^#i\.([A-Za-z0-9_-]+)/);
 const demo = /[?&]demo\b/.test(location.search);
-startInvite(m && !demo ? dec(m[1]) : null);
+window.__gInfo = m && !demo ? dec(m[1]) : null;
+startInvite(window.__gInfo);
 if (demo){ window.__demo = window.__preview = true; window.__rsvpInit && window.__rsvpInit(); }
 })();
 </script>
@@ -790,5 +791,11 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getFirestore, collection, addDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 const fs = getFirestore(initializeApp({"apiKey":"AIzaSyD-rwRcgk6su61-b1SZ19IMKkRIzK8nb-A","authDomain":"mariage-e5de1.firebaseapp.com","projectId":"mariage-e5de1","storageBucket":"mariage-e5de1.firebasestorage.app","messagingSenderId":"335035309165","appId":"1:335035309165:web:3e7978b9f22f8c32b07364"}));
 window.__saveRsvp = d => addDoc(collection(fs, 'reponses'), d);
+// historique des ouvertures : une ligne par visite (pas pour la démonstration ni les robots)
+(() => { if (window.__demo || navigator.webdriver) return;
+  try { if (sessionStorage.getItem('vu')) return; sessionStorage.setItem('vu', '1'); } catch(e) {}
+  const g = window.__gInfo;
+  addDoc(collection(fs, 'vues'), { fid: g && g.id ? String(g.id).slice(0, 60) : '', famille: g && g.n ? String(g.n).slice(0, 110) : 'Lien général', date: Date.now() }).catch(() => {});
+})();
 window.__rsvpInit && window.__rsvpInit();
 </script></body></html>

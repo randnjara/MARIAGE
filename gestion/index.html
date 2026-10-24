@@ -545,7 +545,7 @@ html.mode-admin #wrap{display:none}
 .talert{background:#fbe9e6;border:1px solid #d9a39a;color:#8a2a1c;border-radius:12px;padding:12px 16px;margin-bottom:14px;font:14px/1.5 var(--sans)}.talert b{font-weight:600}
 .tcard.bad{border:2px solid #c0392b;background:#fdf1ef}.tcard.bad .meta span:first-child{color:#c0392b;font-weight:600}
 #unassigned{display:block}
-#lastResp:not([hidden]){display:block}#lastResp ul{display:flex;flex-direction:column;gap:6px}#lastResp li{align-items:center;flex-wrap:wrap}
+#lastResp:not([hidden]),#viewHist:not([hidden]){display:block}#viewHist ul{display:flex;flex-direction:column;gap:6px;list-style:none;padding:0;margin:0}#viewHist li{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:14px;border-bottom:1px solid var(--line);padding:6px 0}#lastResp ul{display:flex;flex-direction:column;gap:6px}#lastResp li{align-items:center;flex-wrap:wrap}
 .tcard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
 .tcard .row{display:flex;gap:8px;align-items:center}
 .tcard .row input.tname{flex:1;font:600 18px var(--serif)}
@@ -580,6 +580,7 @@ html.mode-admin #wrap{display:none}
   <p class="share" id="shareNote">Chaque famille reçoit son propre lien. Quand une famille répond sur son invitation, sa réponse s'affiche ici toute seule. Cette page n'est visible qu'avec votre compte Google.</p>
   <section class="stats" id="stats"></section>
   <section class="side" id="lastResp" hidden style="margin-bottom:18px"></section>
+  <section class="side" id="viewHist" hidden style="margin-bottom:18px"></section>
   <section id="detail" hidden></section>
   <section class="sides" id="sides"></section>
   <nav class="tabs" role="tablist"><button role="tab" aria-selected="true" data-tab="fam" type="button">Familles</button><button role="tab" aria-selected="false" data-tab="tab" type="button">Plan de tables</button><button role="tab" aria-selected="false" data-tab="salle" type="button">Plan de salle</button><button role="tab" aria-selected="false" data-tab="dep" type="button">Dépenses</button></nav>
@@ -970,7 +971,7 @@ $('#famList').addEventListener('change', e => {
 $('#q').addEventListener('input', renderFamilies); $('#fStatus').addEventListener('change', renderFamilies); $('#fCat').addEventListener('change', render); $('#fSide').addEventListener('change', render);
 document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => {
   tab = b.dataset.tab; document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-selected', x===b));
-  $('#tabFam').hidden = tab!=='fam'; $('#tabTab').hidden = tab!=='tab'; $('#tabSalle').hidden = tab!=='salle'; $('#tabDep').hidden = tab!=='dep'; ['#stats','#sides','#lastResp','#detail'].forEach(k => { const el = $(k); if (el) el.style.display = tab==='dep' ? 'none' : ''; });
+  $('#tabFam').hidden = tab!=='fam'; $('#tabTab').hidden = tab!=='tab'; $('#tabSalle').hidden = tab!=='salle'; $('#tabDep').hidden = tab!=='dep'; ['#stats','#sides','#lastResp','#viewHist','#detail'].forEach(k => { const el = $(k); if (el) el.style.display = tab==='dep' ? 'none' : ''; });
 }));
 $('#gView').addEventListener('click', () => startInvite(null, true));
 $('#pView').addEventListener('click', () => startInvite(families[0] ? {n:families[0].name, s:families[0].seats} : {n:'Famille Rakoto', s:4}, true));
@@ -1451,11 +1452,23 @@ function watchResponses() {
     $('#hClear').onclick = async () => { if (!confirm('Effacer tout l’historique des réponses ? Les réponses déjà notées sur chaque famille restent.')) return; await Promise.all(all.map(r => deleteDoc(r.ref).catch(() => {}))); };
   }, () => {});
 }
+function watchViews() {
+  onSnapshot(collection(fs, 'vues'), s => {
+    const all = s.docs.map(d => ({ ref: d.ref, ...d.data() })).sort((a, b) => (b.date || 0) - (a.date || 0));
+    const box = $('#viewHist'); box.hidden = !all.length; if (!all.length) return;
+    const gen = all.filter(v => !v.fid).length, fams = new Set(all.filter(v => v.fid).map(v => v.fid)).size;
+    const when = v => new Date(v.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Historique des ouvertures</h3><button class="a-btn sm sec" type="button" id="vClear">Effacer l’historique</button></div>'
+      + `<p style="margin:6px 0 8px;font-size:13px;opacity:.75">${fams} famille${fams > 1 ? 's ont ouvert leur' : ' a ouvert son'} invitation personnelle · lien général ouvert ${gen} fois. Le nom Facebook n’est jamais transmis : le lien général reste anonyme.</p>`
+      + '<ul style="max-height:320px;overflow:auto">' + all.slice(0, 150).map(v => `<li><span>${v.fid ? esc(v.famille) : 'Lien général (anonyme)'}</span><span>${when(v)}</span></li>`).join('') + '</ul>';
+    $('#vClear').onclick = async () => { if (!confirm('Effacer tout l’historique des ouvertures ?')) return; await Promise.all(all.map(v => deleteDoc(v.ref).catch(() => {}))); };
+  }, () => {});
+}
 onAuthStateChanged(auth, u => {
   if (!u) { $('#login').hidden = false; return; }
   $('#login').hidden = true;
   window.__owner = String(u.email || '').toLowerCase() === 'randnjara@gmail.com';
-  if (!started) { started = true; window.__startAdmin(); watchResponses(); }
+  if (!started) { started = true; window.__startAdmin(); watchResponses(); watchViews(); }
 });
 $('#gLogin').addEventListener('click', () => signInWithPopup(auth, new GoogleAuthProvider()).catch(e => $('#lErr').textContent = 'Connexion impossible (' + e.code + ').'));
 document.addEventListener('click', async e => {
