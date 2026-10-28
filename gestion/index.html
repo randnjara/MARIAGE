@@ -955,7 +955,11 @@ function renderFamilies(){
 $('#famList').addEventListener('click', async e => {
   const el = e.target.closest('[data-act]'); if (!el) return; const f = families.find(x => x.id === el.closest('.fam').dataset.id); if (!f) return;
   const act = el.dataset.act;
-  if (act==='status'){ const v = el.dataset.v; save(fdoc(f.id), v==='oui' ? {status:v, coming:f.coming ?? f.seats} : {status:v}); }
+  if (act==='status'){ const v = el.dataset.v; save(fdoc(f.id), v==='oui' ? {status:v, coming:f.coming ?? f.seats} : {status:v});
+    // une réponse notée à la main apparaît aussi dans « Dernières réponses », comme une réponse faite par le lien
+    if (v !== 'attente' && v !== f.status){ const n = parseInt(f.coming ?? f.seats, 10) || 1, a = Math.min(n, parseInt(f.adultes ?? n, 10) || n), k = n - a;
+      const suf = v === 'oui' ? ` |A${a}|E${k}|N${parseInt(f.navette, 10) || 0}|Q${String(f.quartier || '').replace(/\|/g, ' ').slice(0, 30)}` : ' |A0|E0';
+      db.collection('reponses').add({ familyId: f.id, famille: String(f.name).slice(0, 70) + suf, places: parseInt(f.seats, 10) || 0, reponse: v === 'oui' ? 'Vient' : 'Ne vient pas', personnes: v === 'oui' ? n : 0, date: Date.now() }).catch(() => {}); } }
   if (act==='side') save(fdoc(f.id), {side: f.side===el.dataset.v ? '' : el.dataset.v});
   if (act==='send'){ if (!f.sent) save(fdoc(f.id), {sent:true}); }
   if (act==='copy'){ const link = invLink(f); if (!f.sent) save(fdoc(f.id), {sent:true}); try { await navigator.clipboard.writeText(link); toast('Lien copié pour ' + f.name + ' · marquée « envoyée »'); } catch(err){ toast(link); } }
