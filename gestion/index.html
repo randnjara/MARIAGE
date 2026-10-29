@@ -496,6 +496,12 @@ html.mode-admin #wrap{display:none}
 .stab{background:transparent}
 .door{margin:10px auto 0;width:140px;text-align:center;padding:6px;border-top:4px solid #8e6137;color:#8e6137;font:500 13px var(--sans);letter-spacing:.1em;text-transform:uppercase}
 .lg{display:inline-flex;align-items:center;gap:6px;font:14px var(--sans);color:var(--espresso)}.lg i{width:14px;height:14px;border-radius:50%;display:inline-block}
+#salle3d{position:relative;height:min(78vh,760px);min-height:440px;border-radius:14px;background:#f4ece0;border:1px solid var(--line);overflow:hidden}
+#s3ctl{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:6px;z-index:2}#s3ctl button{width:40px;height:40px;border-radius:50%;border:1px solid #c9a87c;background:rgba(255,251,244,.95);font:600 20px/1 var(--sans);color:#52331c;cursor:pointer}
+.s3help{position:absolute;left:12px;top:8px;right:60px;margin:0;font:13px var(--sans);color:#8e6137;pointer-events:none;z-index:2}
+#s3info{position:absolute;left:10px;bottom:10px;width:min(340px,calc(100% - 20px));background:rgba(255,251,244,.97);border:1px solid #c9a87c;border-radius:14px;padding:12px 14px;box-shadow:0 10px 30px rgba(60,35,15,.2);z-index:3}
+.smode{display:inline-flex;border:1px solid #c9a87c;border-radius:999px;overflow:hidden}.smode button{border:0;background:#fff;padding:8px 14px;font:500 14px var(--sans);color:#8e6137;cursor:pointer}.smode button[aria-pressed="true"]{background:#6b4a2f;color:#fff}
+@media print{#salle{display:block!important}#salle3d{display:none!important}}
 @media print{body *{visibility:hidden}#salle,#salle *{visibility:visible}#salle{position:absolute;left:0;top:0;width:100%}.stabs{grid-template-columns:repeat(4,1fr)}.stab{break-inside:avoid}}
 .tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:18px}
 .tabs button{font:500 15px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;background:none;border:0;border-bottom:3px solid transparent;padding:14px 12px;color:var(--caramel);cursor:pointer}
@@ -613,10 +619,12 @@ html.mode-admin #wrap{display:none}
   <section id="tabSalle" hidden>
     <div class="toolbar" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
       <span class="lg"><i style="background:#4f6b3a"></i>Confirmé</span><span class="lg"><i style="background:#b8875a"></i>En attente</span><span class="lg"><i style="background:#fff;border:1px dashed #b8a58a"></i>Place libre</span>
-      <button class="a-btn sec" type="button" id="sPrint" style="margin-left:auto">Imprimer le plan</button>
+      <span class="smode" style="margin-left:auto"><button type="button" data-smode="3d" aria-pressed="true">Vue 3D</button><button type="button" data-smode="2d" aria-pressed="false">Vue 2D</button></span>
+      <button class="a-btn sec" type="button" id="sPrint">Imprimer le plan</button>
     </div>
     <div class="talert" id="talert2" hidden></div>
-    <div id="salle"></div>
+    <div id="salle3d"><div id="s3ctl"><button type="button" data-z="in" title="Zoomer">+</button><button type="button" data-z="out" title="Dézoomer">−</button><button type="button" data-z="top" title="Vue du dessus">⤓</button><button type="button" data-z="reset" title="Recentrer">⟲</button></div><p class="s3help">Glissez une table pour la déplacer · glissez le fond pour tourner · pincez ou molette pour zoomer · touchez une table pour y placer des familles</p><div id="s3info" hidden></div></div>
+    <div id="salle" hidden></div>
   </section>
   <section id="tabDep" hidden>
     <div class="stats dstats" id="dStats"></div>
@@ -931,7 +939,7 @@ function render(){
   $('#sides').innerHTML = cl.map(k => { const l = families.filter(f => (f.cat||'')===k);
     const t = l.reduce((a,f)=>{ a.seats+=f.seats||0; if(f.status==='oui') a.oui+=f.coming??f.seats; else if(f.status!=='non') a.wait++; return a; }, {seats:0,oui:0,wait:0});
     return `<button type="button" class="sidecard" data-cat="${esc(k||'__none')}" aria-pressed="${fct===(k||'__none')}"><b>${esc(k||'Sans catégorie')}</b>${l.length} famille${l.length>1?'s':''} · ${t.seats} place${t.seats>1?'s':''} · ${t.oui} confirmé${t.oui>1?'s':''} · ${t.wait} sans réponse</button>`; }).join('');
-  renderFamilies(); renderTables(); renderSalle();
+  renderFamilies(); renderTables(); renderSalle(); if (S3 && !$('#salle3d').hidden) s3build();
 }
 $('#sides').addEventListener('click', e => { const b = e.target.closest('[data-cat]'); if (!b) return; const v = b.dataset.cat; renderFamilies(); $('#fCat').value = $('#fCat').value===v ? '' : v; render(); });
 const CATS = ['FAMILLE TSIDY DADA','FAMILLE TSIDY NENY','FAMILLE NJARA','AMIE NJARA','MPIASA NJARA TSIDY','AMI TSIDY','BASKET'];
@@ -981,6 +989,7 @@ $('#q').addEventListener('input', renderFamilies); $('#fStatus').addEventListene
 document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => {
   tab = b.dataset.tab; document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-selected', x===b));
   $('#tabFam').hidden = tab!=='fam'; $('#tabTab').hidden = tab!=='tab'; $('#tabSalle').hidden = tab!=='salle'; $('#tabDep').hidden = tab!=='dep'; ['#stats','#sides','#lastResp','#viewHist','#detail'].forEach(k => { const el = $(k); if (el) el.style.display = tab==='dep' ? 'none' : ''; });
+  if (tab==='salle') s3show();
 }));
 $('#gView').addEventListener('click', () => startInvite(null, true));
 $('#pView').addEventListener('click', () => startInvite(families[0] ? {n:families[0].name, s:families[0].seats} : {n:'Famille Rakoto', s:4}, true));
@@ -1232,6 +1241,110 @@ function renderSalle(){
   $('#salle').innerHTML = !T.length ? '<div class="empty"><h3>Aucune table</h3>Importez votre classeur ou créez des tables dans « Plan de tables ».</div>'
     : `<svg width="0" height="0" style="position:absolute"><defs><radialGradient id="cloth" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#fffaf1"/><stop offset="1" stop-color="#ead8ba"/></radialGradient></defs></svg><div class="room"><div class="stage">Table d’honneur · Tsidy &amp; Njara · Mihaja Kaël</div><div class="floor">Piste de danse</div><div class="stabs">${T.map(box).join('')}</div><div class="door">Entrée</div></div>`;
 }
+/* plan de salle en 3D : tables déplaçables (position enregistrée sur chaque table), clic sur une table pour y placer des familles */
+var S3 = null, s3mode = "3d";
+function s3load(){ return window.THREE ? Promise.resolve() : new Promise((ok, ko) => { const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'; s.onload = ok; s.onerror = ko; document.head.appendChild(s); }); }
+function s3label(lines, bad){
+  const c = document.createElement('canvas'); c.width = 512; c.height = 200; const x = c.getContext('2d');
+  x.fillStyle = 'rgba(255,251,244,.93)'; x.strokeStyle = bad ? '#c0392b' : '#a37a4e'; x.lineWidth = bad ? 8 : 5;
+  const r = 40; x.beginPath(); x.moveTo(r,6); x.arcTo(506,6,506,194,r); x.arcTo(506,194,6,194,r); x.arcTo(6,194,6,6,r); x.arcTo(6,6,506,6,r); x.closePath(); x.fill(); x.stroke();
+  x.textAlign = 'center'; x.fillStyle = '#52331c'; x.font = '700 62px Jost, sans-serif'; x.fillText(lines[0].length > 15 ? lines[0].slice(0, 14) + '…' : lines[0], 256, 88);
+  x.fillStyle = bad ? '#c0392b' : '#8e6137'; x.font = (bad ? '700 ' : '500 ') + '46px Jost, sans-serif'; x.fillText(lines[1], 256, 160);
+  const t = new THREE.CanvasTexture(c); t.anisotropy = 4; const m = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, depthTest: false })); m.scale.set(2.2, .86, 1); m.renderOrder = 10; return m;
+}
+function s3init(){
+  const box = $('#salle3d'), cv = document.createElement('canvas'); cv.style.cssText = 'width:100%;height:100%;display:block;touch-action:none;border-radius:14px'; box.prepend(cv);
+  const R = new THREE.WebGLRenderer({ canvas: cv, antialias: true }); R.setPixelRatio(Math.min(2, devicePixelRatio)); R.shadowMap.enabled = true; R.shadowMap.type = THREE.PCFSoftShadowMap;
+  const sc = new THREE.Scene(); sc.background = new THREE.Color('#f4ece0');
+  const cam = new THREE.PerspectiveCamera(40, 1, .1, 400);
+  sc.add(new THREE.HemisphereLight('#fffaf0', '#b9a07c', .6));
+  const sun = new THREE.DirectionalLight('#fff4e2', .5); sun.position.set(-12, 22, 10); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+  Object.assign(sun.shadow.camera, { left: -30, right: 30, top: 30, bottom: -30, near: 1, far: 80 }); sc.add(sun);
+  const M = c => new THREE.MeshStandardMaterial({ color: c, roughness: .85 });
+  const mat = { floor: M('#e6d6bd'), cloth: M('#f8f0e2'), wood: M('#8a6a4a'), chair: M('#a88b6c'), oui: M('#4f6b3a'), att: M('#b8875a'), dance: M('#a98058'), stage: M('#6b4a2f'), sel: new THREE.MeshBasicMaterial({ color: '#c9a46c', transparent: true, opacity: .55 }), bad: new THREE.MeshBasicMaterial({ color: '#c0392b', transparent: true, opacity: .35 }) };
+  const G = { top: new THREE.CylinderGeometry(.85, .85, .06, 40), leg: new THREE.CylinderGeometry(.07, .07, .72, 12), base: new THREE.CylinderGeometry(.4, .45, .04, 24), seat: new THREE.BoxGeometry(.42, .05, .42), back: new THREE.BoxGeometry(.42, .5, .05), cl: new THREE.BoxGeometry(.04, .45, .04), body: new THREE.CylinderGeometry(.13, .18, .55, 16), head: new THREE.SphereGeometry(.13, 16, 12), ring: new THREE.RingGeometry(1.55, 1.75, 48) };
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshStandardMaterial({ color: '#efe4d2', roughness: 1 })); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; sc.add(floor);
+  const fixed = new THREE.Group(), tg = new THREE.Group(); sc.add(fixed, tg);
+  S3 = { R, sc, cam, cv, box, mat, G, tg, fixed, groups: {}, az: -.55, pol: .95, dist: 34, target: new THREE.Vector3(0, 0, 4), sel: null, drag: null, pending: false };
+  window.__S3 = S3;
+  const ro = new ResizeObserver(() => { const w = box.clientWidth, h = box.clientHeight; if (!w || !h) return; R.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix(); if (!S3.touched && S3.fitted) s3fit(); s3draw(); }); ro.observe(box);
+  s3events();
+}
+function s3fit(){ const s = S3, xs = [0], zs = [-7]; Object.values(s.groups).forEach(g => { xs.push(g.position.x); zs.push(g.position.z); });
+  const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cz = (Math.min(...zs) + Math.max(...zs)) / 2, ext = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...zs) - Math.min(...zs)) + 6;
+  s.target.set(cx, 0, cz); s.dist = Math.min(90, Math.max(12, ext * 1.45 / Math.min(1, Math.pow(s.cam.aspect || 1, .5)))); }
+function s3cam(){ const s = S3, p = s.pol, a = s.az; s.cam.position.set(s.target.x + s.dist * Math.sin(p) * Math.sin(a), s.dist * Math.cos(p), s.target.z + s.dist * Math.sin(p) * Math.cos(a)); s.cam.lookAt(s.target); }
+function s3draw(){ if (!S3) return; s3cam(); S3.R.render(S3.sc, S3.cam); }
+function s3chair(g, a, rad, occ){ const s = S3, c = new THREE.Group();
+  const seat = new THREE.Mesh(s.G.seat, s.mat.chair); seat.position.y = .45; const back = new THREE.Mesh(s.G.back, s.mat.chair); back.position.set(0, .72, .2);
+  c.add(seat, back); for (const [x, z] of [[-.18, -.18], [.18, -.18], [-.18, .18], [.18, .18]]){ const l = new THREE.Mesh(s.G.cl, s.mat.wood); l.position.set(x, .225, z); c.add(l); }
+  if (occ){ const b = new THREE.Mesh(s.G.body, occ === 'oui' ? s.mat.oui : s.mat.att); b.position.set(0, .75, .02); const h = new THREE.Mesh(s.G.head, occ === 'oui' ? s.mat.oui : s.mat.att); h.position.set(0, 1.15, .02); c.add(b, h); }
+  c.traverse(o => { if (o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
+  c.position.set(rad * Math.sin(a), 0, rad * Math.cos(a)); c.rotation.y = a; g.add(c); }
+function s3defaults(T){ const cols = Math.max(3, Math.ceil(Math.sqrt(T.length * 1.4))), sp = 3.8; const pos = {};
+  T.forEach((t, i) => { const r = Math.floor(i / cols), c = i % cols; pos[t.id] = { x: (c - (cols - 1) / 2) * sp, z: 6.5 + r * sp }; }); return pos; }
+function s3build(){
+  const s = S3; if (!s) return; if (s.drag){ s.pending = true; return; }
+  const T = tables.slice().sort((a, b) => (a.order ?? 999) - (b.order ?? 999) || a.name.localeCompare(b.name)), dp = s3defaults(T);
+  s.tg.clear(); s.groups = {}; s.fixed.clear();
+  // table d'honneur et piste de danse
+  const ht = new THREE.Group(); const top = new THREE.Mesh(new THREE.BoxGeometry(5, .08, 1.1), s.mat.cloth); top.position.y = .76; const sk = new THREE.Mesh(new THREE.BoxGeometry(5, .72, 1.05), s.mat.stage); sk.position.y = .36; ht.add(top, sk);
+  for (let i = 0; i < 4; i++) s3chair(ht, Math.PI, -.9, 'oui'), ht.children[ht.children.length - 1].position.x = -1.8 + i * 1.2;
+  const hl = s3label(['Table d’honneur', 'Tsidy & Njara'], false); hl.scale.set(3.4, 1.33, 1); hl.position.y = 2.3; ht.add(hl); ht.position.set(0, 0, -7); ht.traverse(o => { if (o.isMesh) o.castShadow = true; }); s.fixed.add(ht);
+  const df = new THREE.Mesh(new THREE.BoxGeometry(7, .03, 6), s.mat.dance); df.position.set(0, .015, -1.6); df.receiveShadow = true; s.fixed.add(df);
+  const dl = s3label(['Piste de danse', ''], false); dl.position.set(0, .6, -1.6); s.fixed.add(dl);
+  T.forEach(t => {
+    const g = new THREE.Group(), p = (t.x != null && t.z != null) ? { x: t.x, z: t.z } : dp[t.id]; g.position.set(p.x, 0, p.z); g.userData.tid = t.id;
+    const top = new THREE.Mesh(s.G.top, s.mat.cloth); top.position.y = .75; const leg = new THREE.Mesh(s.G.leg, s.mat.wood); leg.position.y = .36; const base = new THREE.Mesh(s.G.base, s.mat.wood); base.position.y = .02;
+    g.add(top, leg, base); const seats = []; atTable(t.id).forEach(([f, n]) => { for (let i = 0; i < n; i++) seats.push(f.status === 'oui' ? 'oui' : 'att'); });
+    const cap = t.capacity || 10, n = Math.max(cap, seats.length), bad = seats.length !== cap;
+    for (let i = 0; i < n; i++) s3chair(g, i * 2 * Math.PI / n, 1.25, seats[i]);
+    g.traverse(o => { if (o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
+    const ring = new THREE.Mesh(s.G.ring, bad ? s.mat.bad : s.mat.sel); ring.rotation.x = -Math.PI / 2; ring.position.y = .03; ring.visible = bad || s.sel === t.id; ring.userData.ring = 1; g.add(ring);
+    const lb = s3label([t.name || 'Table', `${seats.length} / ${cap}` + (bad ? (seats.length > cap ? ` · ${seats.length - cap} de trop` : ` · manque ${cap - seats.length}`) : '')], bad); lb.position.y = 2.15; g.add(lb);
+    s.tg.add(g); s.groups[t.id] = g; });
+  if (!s.fitted){ s.fitted = true; s3fit(); }
+  s3info(); s3draw();
+}
+function s3events(){
+  const s = S3, cv = s.cv, ray = new THREE.Raycaster(), v2 = new THREE.Vector2(), plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), hit = new THREE.Vector3(), P = new Map();
+  const ndc = e => { const r = cv.getBoundingClientRect(); v2.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1); ray.setFromCamera(v2, s.cam); };
+  const onFloor = () => ray.ray.intersectPlane(plane, hit) ? hit.clone() : null;
+  cv.addEventListener('pointerdown', e => { s.touched = true; cv.setPointerCapture(e.pointerId); P.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (P.size > 1){ s.drag = null; return; }
+    ndc(e); const h = ray.intersectObjects(s.tg.children, true).find(i => i.object.isMesh); let g = h && h.object; while (g && !g.userData.tid) g = g.parent;
+    const f = onFloor(); s.drag = g && f ? { g, off: g.position.clone().sub(f), moved: false, x0: e.clientX, y0: e.clientY } : { orbit: true, moved: false, x0: e.clientX, y0: e.clientY }; });
+  cv.addEventListener('pointermove', e => { const q = P.get(e.pointerId); if (!q) return;
+    if (P.size === 2){ const [a, b] = [...P.values()], d0 = Math.hypot(a.x - b.x, a.y - b.y); q.x = e.clientX; q.y = e.clientY; const [c, d] = [...P.values()], d1 = Math.hypot(c.x - d.x, c.y - d.y); if (d0 && d1){ s.dist = Math.min(90, Math.max(8, s.dist * d0 / d1)); s3draw(); } return; }
+    const dx = e.clientX - q.x, dy = e.clientY - q.y; q.x = e.clientX; q.y = e.clientY; const d = s.drag; if (!d) return;
+    if (Math.hypot(e.clientX - d.x0, e.clientY - d.y0) > 6) d.moved = true; if (!d.moved) return;
+    if (d.orbit){ s.az -= dx * .006; s.pol = Math.min(1.35, Math.max(.25, s.pol - dy * .005)); s3draw(); return; }
+    ndc(e); const f = onFloor(); if (!f) return; const np = f.add(d.off); d.g.position.set(Math.round(np.x * 10) / 10, 0, Math.round(np.z * 10) / 10); s3draw(); });
+  const up = e => { P.delete(e.pointerId); const d = s.drag; s.drag = null; if (!d) return;
+    if (d.g && d.moved){ const id = d.g.userData.tid, t = tables.find(x => x.id === id); if (t){ t.x = d.g.position.x; t.z = d.g.position.z; } save(tdoc(id), { x: d.g.position.x, z: d.g.position.z }); }
+    else if (!d.moved){ s.sel = d.g ? d.g.userData.tid : null; Object.entries(s.groups).forEach(([id, g]) => { const r = g.children.find(o => o.userData.ring); if (r) r.visible = r.material === s.mat.bad || id === s.sel; }); s3info(); s3draw(); }
+    if (s.pending){ s.pending = false; s3build(); } };
+  cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+  cv.addEventListener('wheel', e => { e.preventDefault(); s.dist = Math.min(90, Math.max(8, s.dist * (e.deltaY > 0 ? 1.1 : .9))); s3draw(); }, { passive: false });
+  $('#s3ctl').addEventListener('click', e => { const b = e.target.closest('[data-z]'); if (!b) return; const z = b.dataset.z;
+    if (z === 'in') s.dist = Math.max(8, s.dist * .8); else if (z === 'out') s.dist = Math.min(90, s.dist * 1.25); else if (z === 'top'){ s.pol = .25; s.az = 0; } else { s.az = -.55; s.pol = .95; s3fit(); } s3draw(); });
+}
+function s3info(){
+  const el = $('#s3info'), s = S3, t = s && s.sel && tables.find(x => x.id === s.sel); if (!t){ el.hidden = true; return; }
+  const fs = atTable(t.id), n = fs.reduce((a, [, k]) => a + k, 0), cap = t.capacity || 10;
+  const free = families.filter(f => f.status !== 'non' && !fs.some(([x]) => x.id === f.id)).sort((a, b) => a.name.localeCompare(b.name));
+  el.hidden = false; el.innerHTML = `<div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b style="font:600 20px var(--serif)">${esc(t.name)}</b><button class="a-btn sm sec" type="button" data-s3="close">Fermer</button></div>
+    <div style="margin:4px 0 8px;font-size:14px;color:${n !== cap ? '#c0392b' : '#8e6137'}">${n} / ${cap} personnes</div>
+    <ul style="list-style:none;margin:0 0 8px;padding:0;max-height:180px;overflow:auto">${fs.map(([f, k]) => `<li style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid var(--line)"><span><i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${f.status === 'oui' ? '#4f6b3a' : '#b8875a'};margin-right:6px"></i>${esc(f.name)} (${k})</span><button class="a-btn sm sec" type="button" data-s3="un" data-f="${esc(f.id)}">Retirer</button></li>`).join('') || '<li style="opacity:.7">Aucune famille</li>'}</ul>
+    <select data-s3="add" style="width:100%"><option value="">Placer une famille à cette table…</option>${free.map(f => `<option value="${esc(f.id)}">${esc(f.name)} (${heads(f)})${f.table && tables.some(x => x.id === f.table) ? ' · ' + esc((tables.find(x => x.id === f.table) || {}).name || '') : ''}</option>`).join('')}</select>`;
+}
+$('#s3info').addEventListener('click', e => { const b = e.target.closest('[data-s3]'); if (!b) return; const id = S3 && S3.sel;
+  if (b.dataset.s3 === 'close'){ S3.sel = null; s3build(); }
+  if (b.dataset.s3 === 'un' && id){ const f = families.find(x => x.id === b.dataset.f); if (!f) return; if (f.table !== id && f.alloc){ const a = { ...f.alloc }; delete a[id]; save(fdoc(f.id), { alloc: a }); } else save(fdoc(f.id), { table: '', alloc: null }); } });
+$('#s3info').addEventListener('change', e => { if (e.target.dataset.s3 === 'add' && e.target.value && S3 && S3.sel){ save(fdoc(e.target.value), { table: S3.sel, alloc: null }); toast('Famille placée'); } });
+function s3show(){ const is3 = s3mode === '3d'; $('#salle3d').hidden = !is3; $('#salle').hidden = is3; document.querySelectorAll('[data-smode]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.smode === s3mode)));
+  if (is3) s3load().then(() => { if (!S3) s3init(); s3build(); }).catch(() => { toast('La 3D n’a pas pu se charger, vue 2D affichée'); s3mode = '2d'; s3show(); }); }
+document.querySelectorAll('[data-smode]').forEach(b => b.addEventListener('click', () => { s3mode = b.dataset.smode; s3show(); }));
+
 $('#sPrint').addEventListener('click', () => { document.querySelectorAll('.tabs button').forEach(b => { if (b.dataset.tab==='salle') b.click(); }); window.print(); });
 function renderTables(){
   const active = families.filter(f => f.status !== 'non');
