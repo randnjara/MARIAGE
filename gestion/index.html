@@ -961,7 +961,10 @@ $('#famList').addEventListener('click', async e => {
     // une réponse notée à la main apparaît aussi dans « Dernières réponses », comme une réponse faite par le lien
     if (v !== 'attente' && v !== f.status){ const n = parseInt(f.coming ?? f.seats, 10) || 1, a = Math.min(n, parseInt(f.adultes ?? n, 10) || n), k = n - a;
       const suf = v === 'oui' ? ` |A${a}|E${k}|N${parseInt(f.navette, 10) || 0}|Q${String(f.quartier || '').replace(/\|/g, ' ').slice(0, 30)}` : ' |A0|E0';
-      db.collection('reponses').add({ familyId: f.id, famille: String(f.name).slice(0, 70) + suf, places: parseInt(f.seats, 10) || 0, reponse: v === 'oui' ? 'Vient' : 'Ne vient pas', personnes: v === 'oui' ? n : 0, date: Date.now() }).catch(() => {}); } }
+      db.collection('reponses').add({ familyId: f.id, famille: String(f.name).slice(0, 70) + suf, places: parseInt(f.seats, 10) || 0, reponse: v === 'oui' ? 'Vient' : 'Ne vient pas', personnes: v === 'oui' ? n : 0, date: Date.now() }).catch(() => {});
+ }
+    // chaque clic Vient / Ne vient pas / En attente est noté dans l'historique
+    db.collection('vues').add({ fid: 'clic:' + String(f.id).slice(0, 50), famille: String(f.name).slice(0, 80) + ' — ' + (v === 'oui' ? 'Vient (' + (parseInt(f.coming ?? f.seats, 10) || 1) + ')' : v === 'non' ? 'Ne vient pas' : 'Remis en attente'), date: Date.now() }).catch(() => {}); }
   if (act==='side') save(fdoc(f.id), {side: f.side===el.dataset.v ? '' : el.dataset.v});
   if (act==='send'){ if (!f.sent) save(fdoc(f.id), {sent:true}); }
   if (act==='copy'){ const link = invLink(f); if (!f.sent) save(fdoc(f.id), {sent:true}); try { await navigator.clipboard.writeText(link); toast('Lien copié pour ' + f.name + ' · marquée « envoyée »'); } catch(err){ toast(link); } }
@@ -1462,11 +1465,11 @@ function watchViews() {
   onSnapshot(collection(fs, 'vues'), s => {
     const all = s.docs.map(d => ({ ref: d.ref, ...d.data() })).sort((a, b) => (b.date || 0) - (a.date || 0));
     const box = $('#viewHist'); box.hidden = !all.length; if (!all.length) return;
-    const gen = all.filter(v => !v.fid).length, fams = new Set(all.filter(v => v.fid).map(v => v.fid)).size;
+    const isR = v => /^(rep|clic):/.test(v.fid || ''), ops = all.filter(v => !isR(v)), gen = ops.filter(v => !v.fid).length, fams = new Set(ops.filter(v => v.fid).map(v => v.fid)).size, nr = all.length - ops.length;
     const when = v => new Date(v.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-    box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Historique des ouvertures</h3><button class="a-btn sm sec" type="button" id="vClear">Effacer l’historique</button></div>'
-      + `<p style="margin:6px 0 8px;font-size:13px;opacity:.75">${fams} famille${fams > 1 ? 's ont ouvert leur' : ' a ouvert son'} invitation personnelle · lien général ouvert ${gen} fois. Le nom Facebook n’est jamais transmis : le lien général reste anonyme.</p>`
-      + '<ul style="max-height:320px;overflow:auto">' + all.slice(0, 150).map(v => `<li><span>${v.fid ? esc(v.famille) : 'Lien général (anonyme)'}</span><span>${when(v)}</span></li>`).join('') + '</ul>';
+    box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Historique des ouvertures et des clics</h3><button class="a-btn sm sec" type="button" id="vClear">Effacer l’historique</button></div>'
+      + `<p style="margin:6px 0 8px;font-size:13px;opacity:.75">${fams} famille${fams > 1 ? 's ont ouvert leur' : ' a ouvert son'} invitation personnelle · lien général ouvert ${gen} fois · ${nr} clic${nr > 1 ? 's' : ''} « Je viens / Je ne viens pas ». Le nom Facebook n’est jamais transmis : le lien général reste anonyme.</p>`
+      + '<ul style="max-height:320px;overflow:auto">' + all.slice(0, 150).map(v => `<li><span>${isR(v) ? '<b>' + esc(v.famille) + '</b>' + (v.fid.startsWith('clic:') ? ' (cliqué dans la Gestion)' : '') : v.fid ? esc(v.famille) + ' · ouverture' : 'Lien général (anonyme) · ouverture'}</span><span>${when(v)}</span></li>`).join('') + '</ul>';
     $('#vClear').onclick = async () => { if (!confirm('Effacer tout l’historique des ouvertures ?')) return; await Promise.all(all.map(v => deleteDoc(v.ref).catch(() => {}))); };
   }, () => {});
 }

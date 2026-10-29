@@ -792,7 +792,10 @@ if (demo){ window.__demo = window.__preview = true; window.__rsvpInit && window.
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getFirestore, collection, addDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 const fs = getFirestore(initializeApp({"apiKey":"AIzaSyD-rwRcgk6su61-b1SZ19IMKkRIzK8nb-A","authDomain":"mariage-e5de1.firebaseapp.com","projectId":"mariage-e5de1","storageBucket":"mariage-e5de1.firebasestorage.app","messagingSenderId":"335035309165","appId":"1:335035309165:web:3e7978b9f22f8c32b07364"}));
-window.__saveRsvp = d => addDoc(collection(fs, 'reponses'), d);
+window.__saveRsvp = d => addDoc(collection(fs, 'reponses'), d).then(r => {
+  // historique : le clic « Je viens » / « Je ne viens pas » apparaît aussi dans la Gestion
+  if (!window.__demo && !navigator.webdriver) addDoc(collection(fs, 'vues'), { fid: 'rep:' + String(d.familyId || '').slice(0, 50), famille: (String(d.famille || '').replace(/ \|A\d+.*$/, '') || 'Lien général').slice(0, 80) + ' — ' + (d.reponse === 'Vient' ? 'Je viens (' + (d.personnes || 1) + ')' : 'Je ne viens pas'), date: Date.now() }).catch(() => {});
+  return r; });
 // historique des ouvertures : une ligne par visite (pas pour la démonstration ni les robots)
 (() => { if (window.__demo || navigator.webdriver) return;
   try { if (sessionStorage.getItem('vu')) return; sessionStorage.setItem('vu', '1'); } catch(e) {}
