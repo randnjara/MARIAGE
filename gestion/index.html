@@ -977,9 +977,11 @@ $('#famList').addEventListener('click', async e => {
   if (act==='side') save(fdoc(f.id), {side: f.side===el.dataset.v ? '' : el.dataset.v});
   if (act==='send'){ if (!f.sent) save(fdoc(f.id), {sent:true}); }
   if (act==='rappelm'){ const text = remText(f), mob = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    // téléphone : menu Partager du téléphone → Messenger → la personne ; le message est déjà écrit
+    if (mob && navigator.share){ try { await navigator.share({ text }); } catch(err){} return; }
     try { await navigator.clipboard.writeText(text); } catch(err){}
-    toast('Rappel copié : choisissez ' + f.name + ' dans Messenger puis collez le message');
-    setTimeout(() => { if (mob) location.href = 'fb-messenger://share?link=' + encodeURIComponent(invLink(f)); else window.open('https://www.messenger.com/', '_blank', 'noopener'); }, 400); return; }
+    toast('Rappel copié : dans Messenger, ouvrez la conversation de ' + f.name + ' puis collez (Ctrl+V)');
+    setTimeout(() => window.open('https://www.messenger.com/', '_blank', 'noopener'), 400); return; }
   if (act==='rappel'){ const text = remText(f);
     if (navigator.share){ try { await navigator.share({ text }); return; } catch(err){ if (err && err.name === 'AbortError') return; } }
     try { await navigator.clipboard.writeText(text); toast('Rappel copié pour ' + f.name + ' : collez-le dans Messenger'); } catch(err){ prompt('Copiez ce rappel :', text); } }
