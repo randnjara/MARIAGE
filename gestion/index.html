@@ -960,7 +960,7 @@ function renderFamilies(){
     <div class="meta">${f.cat ? `<span>${esc(f.cat)}</span>` : ''}${f.adults != null ? `<span>${f.adults} adulte${f.adults>1?'s':''}${f.kids ? ` · ${f.kids} enfant${f.kids>1?'s':''}` : ''}</span>` : ''}${f.tnote ? `<span>Réparti : ${esc(f.tnote)}</span>` : ''}<button type="button" class="sentb${f.sent ? ' on' : ''}" data-act="sent" title="Cliquer pour changer">${f.sent ? '✓ Invitation envoyée' : 'Pas encore envoyée'}</button>${f.phone ? `<span>${esc(f.phone)}</span>` : ''}<label>Table <select data-act="table">${topts(f.table)}</select></label></div>
     <div class="seg" role="group" aria-label="Réponse">${[['attente','En attente'],['oui','Vient'],['non','Ne vient pas']].map(([v,l])=>`<button type="button" data-act="status" data-v="${v}" aria-pressed="${s===v}">${l}</button>`).join('')}</div>
     ${s==='oui' ? `<label class="coming">Personnes présentes <input type="number" min="1" max="${f.seats}" value="${f.coming ?? f.seats}" data-act="coming"></label>${f.adultes != null ? `<span class="coming">${f.adultes} adulte${f.adultes > 1 ? 's' : ''}, ${f.enfants || 0} enfant${(f.enfants || 0) > 1 ? 's' : ''}</span>` : ''}` : ''}
-    <div class="acts"><a class="a-btn sm wa" data-act="send" target="_blank" rel="noopener" href="${esc(waLink(ph, invText(f)))}">Envoyer sur WhatsApp</a><button class="a-btn sm sec" type="button" data-act="copy">Copier le lien</button>${f.status!=='oui' && f.status!=='non' ? '<button class="a-btn sm" type="button" data-act="rappel" title="Envoyer un rappel (Messenger, WhatsApp…)">Rappel</button>' : ''}<button class="a-btn sm sec" type="button" data-act="view">Voir</button><button class="a-btn sm sec" type="button" data-act="edit">Modifier</button></div>
+    <div class="acts"><a class="a-btn sm wa" data-act="send" target="_blank" rel="noopener" href="${esc(waLink(ph, invText(f)))}">Envoyer sur WhatsApp</a><button class="a-btn sm sec" type="button" data-act="copy">Copier le lien</button>${f.status!=='oui' && f.status!=='non' ? '<button class="a-btn sm" type="button" data-act="rappelm" title="Copie le rappel et ouvre Messenger" style="background:#0866ff;border-color:#0866ff;color:#fff">Rappel Messenger</button><button class="a-btn sm sec" type="button" data-act="rappel" title="Partager le rappel (WhatsApp, SMS…)">Rappel autre</button>' : ''}<button class="a-btn sm sec" type="button" data-act="view">Voir</button><button class="a-btn sm sec" type="button" data-act="edit">Modifier</button></div>
   </article>`; }).join('') + '</div>';
 }
 $('#famList').addEventListener('click', async e => {
@@ -976,6 +976,10 @@ $('#famList').addEventListener('click', async e => {
     db.collection('vues').add({ fid: 'clic:' + String(f.id).slice(0, 50), famille: String(f.name).slice(0, 80) + ' — ' + (v === 'oui' ? 'Vient (' + (parseInt(f.coming ?? f.seats, 10) || 1) + ')' : v === 'non' ? 'Ne vient pas' : 'Remis en attente'), date: Date.now() }).catch(() => {}); }
   if (act==='side') save(fdoc(f.id), {side: f.side===el.dataset.v ? '' : el.dataset.v});
   if (act==='send'){ if (!f.sent) save(fdoc(f.id), {sent:true}); }
+  if (act==='rappelm'){ const text = remText(f), mob = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    try { await navigator.clipboard.writeText(text); } catch(err){}
+    toast('Rappel copié : choisissez ' + f.name + ' dans Messenger puis collez le message');
+    setTimeout(() => { if (mob) location.href = 'fb-messenger://share?link=' + encodeURIComponent(invLink(f)); else window.open('https://www.messenger.com/', '_blank', 'noopener'); }, 400); return; }
   if (act==='rappel'){ const text = remText(f);
     if (navigator.share){ try { await navigator.share({ text }); return; } catch(err){ if (err && err.name === 'AbortError') return; } }
     try { await navigator.clipboard.writeText(text); toast('Rappel copié pour ' + f.name + ' : collez-le dans Messenger'); } catch(err){ prompt('Copiez ce rappel :', text); } }
