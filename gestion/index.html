@@ -387,7 +387,7 @@ const run=()=>document.querySelectorAll('.flw[data-g]').forEach(e=>{if(!e.firstC
     <div class="flw" data-g="small" style="--d:1.2s;right:-6px;bottom:-6px;width:250px;height:250px;transform:scaleY(-1)"></div>
     <div class="col">
       <div class="script rv" style="--d:.4s;font-size:110px;line-height:1.1">Merci de confirmer<br>votre présence</div>
-      <div class="kicker rv k-per" style="--d:.8s;margin-top:24px;font-size:36px">avant le <b style="font-weight:700;color:var(--espresso)">31 octobre 2026</b></div><div class="kicker rv k-gen" style="--d:.8s;margin-top:24px;font-size:36px;line-height:1.5">et le nombre de personnes<br>avant le <b style="font-weight:700;color:var(--espresso)">31 octobre 2026</b><br>sur Messenger ou par appel</div>
+      <div class="kicker rv k-per" style="--d:.8s;margin-top:24px;font-size:36px">avant le <b style="font-weight:700;color:var(--espresso)">6 novembre 2026</b></div><div class="kicker rv k-gen" style="--d:.8s;margin-top:24px;font-size:36px;line-height:1.5">et le nombre de personnes<br>avant le <b style="font-weight:700;color:var(--espresso)">6 novembre 2026</b><br>sur Messenger ou par appel</div>
       <div class="kicker rv cd-t" style="--d:.9s">Le grand jour dans</div>
       <div class="cd rv" style="--d:1.0s"><div><b id="cdD">--</b><span>jours</span></div><div><b id="cdH">--</b><span>heures</span></div><div><b id="cdM">--</b><span>min</span></div><div><b id="cdS">--</b><span>sec</span></div></div>
       <div class="rsvp-form rv" style="--d:1.1s" id="rsvpForm">
@@ -397,7 +397,7 @@ const run=()=>document.querySelectorAll('.flw[data-g]').forEach(e=>{if(!e.firstC
           <div class="srow"><span class="slab">Enfants</span><div class="stepper"><button type="button" id="kMinus" aria-label="Un enfant de moins">−</button><output id="kCnt">0</output><button type="button" id="kPlus" aria-label="Un enfant de plus">+</button></div></div>
           <div class="tot" id="tot" hidden></div>
         </div>
-        <div class="rsvp-pre" id="rsvpPre">Votre réponse sera enregistrée. Vous pouvez encore la modifier jusqu’au <b>31 octobre 2026</b>.</div>
+        <div class="rsvp-pre" id="rsvpPre">Votre réponse sera enregistrée. Vous pouvez encore la modifier jusqu’au <b>6 novembre 2026</b>.</div>
         <a class="btn-main" id="yes" target="_blank" rel="noopener" href="#">Je confirme ma présence</a>
         <a class="btn-ghost" id="no" target="_blank" rel="noopener" href="#">Je ne pourrai pas venir</a>
         <div class="rsvp-note" id="rsvpNote" hidden></div>
@@ -579,9 +579,9 @@ html.mode-admin #wrap{display:none}
     <div class="acts"><button class="a-btn sec" type="button" id="aPreview" hidden>Voir l'invitation</button><a class="a-btn sec" href="invitation-a-imprimer.pdf?v=6" target="_blank" rel="noopener" style="text-decoration:none;display:inline-flex;align-items:center">Invitation à imprimer</a><a class="a-btn sec" href="etiquette-bouteille-vin.pdf?v=3" target="_blank" rel="noopener" title="A4 portrait, 100 %, sans marges si possible, couper sur les pointillés" style="text-decoration:none;display:inline-flex;align-items:center">Étiquette bouteille de vin</a><button class="a-btn sec" type="button" id="aExport" hidden>Exporter Excel</button></div>
   </header>
   <div class="two-inv">
-    <div class="inv-t"><h3>Invitation générale</h3><p>Une seule invitation pour tout un groupe (famille de Neny Tsidy, groupe Messenger) : pas de nom, pas de formulaire, confirmation par Messenger ou appel avant le 31 octobre.</p>
+    <div class="inv-t"><h3>Invitation générale</h3><p>Une seule invitation pour tout un groupe (famille de Neny Tsidy, groupe Messenger) : pas de nom, pas de formulaire, confirmation par Messenger ou appel avant le 6 novembre.</p>
       <div class="acts"><button class="a-btn sm sec" type="button" id="gView">Voir</button><button class="a-btn sm" type="button" id="gCopy">Copier le lien général</button><a class="a-btn sm sec" style="text-decoration:none;display:inline-flex;align-items:center" target="_blank" rel="noopener" href="video-generale.mp4?v=16">Vidéo</a></div></div>
-    <div class="inv-t"><h3>Invitation personnelle</h3><p>Une invitation par famille, avec son nom, son nombre de places et le formulaire de réponse avant le 31 octobre. Le lien se copie sur la ligne de chaque famille (« Copier le lien »).</p>
+    <div class="inv-t"><h3>Invitation personnelle</h3><p>Une invitation par famille, avec son nom, son nombre de places et le formulaire de réponse avant le 6 novembre. Le lien se copie sur la ligne de chaque famille (« Copier le lien »).</p>
       <div class="acts"><button class="a-btn sm sec" type="button" id="pView">Voir un exemple</button><a class="a-btn sm sec" style="text-decoration:none;display:inline-flex;align-items:center" target="_blank" rel="noopener" href="video-invitation.mp4?v=19">Vidéo</a></div></div>
   </div>
   <p class="share" id="shareNote">Chaque famille reçoit son propre lien. Quand une famille répond sur son invitation, sa réponse s'affiche ici toute seule. Cette page n'est visible qu'avec votre compte Google.</p>
@@ -796,9 +796,9 @@ $('#minus').addEventListener('click', e => { e.stopPropagation(); count--; updat
 $('#plus').addEventListener('click', e => { e.stopPropagation(); const max = guest ? guest.s : 20; if (count + kids >= max && kids > 0) kids--; count++; updateRsvp(); });
 $('#kMinus').addEventListener('click', e => { e.stopPropagation(); kids--; updateRsvp(); });
 $('#kPlus').addEventListener('click', e => { e.stopPropagation(); const max = guest ? guest.s : 20; if (count + kids >= max && count > 1) count--; kids++; updateRsvp(); });
-function note(t){ const n = $('#rsvpNote'); n.hidden = false; n.innerHTML = String(t).split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;').split('31 octobre 2026').join('<b>31 octobre 2026</b>'); }
-const DEADLINE = Date.UTC(2026, 9, 31, 21, 0, 0); /* 31 octobre 2026 à minuit, heure de Madagascar */
-const MODIF = ' Vous pouvez encore la modifier jusqu’au 31 octobre 2026, seule votre dernière réponse compte.';
+function note(t){ const n = $('#rsvpNote'); n.hidden = false; n.innerHTML = String(t).split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;').split('6 novembre 2026').join('<b>6 novembre 2026</b>'); }
+const DEADLINE = Date.UTC(2026, 10, 6, 21, 0, 0); /* 6 novembre 2026 à minuit, heure de Madagascar */
+const MODIF = ' Vous pouvez encore la modifier jusqu’au 6 novembre 2026, seule votre dernière réponse compte.';
 const rkey = () => 'rsvp_' + (guest ? (guest.id || guest.n) : 'general');
 const rget = () => { try { return JSON.parse(localStorage.getItem(rkey()) || 'null'); } catch(e){ return null; } };
 const rset = v => { try { localStorage.setItem(rkey(), JSON.stringify(v)); } catch(e){} };
@@ -814,7 +814,7 @@ window.__rsvpInit = () => {
   const prev = rget(), closed = Date.now() >= DEADLINE;
   ['#stepper','#yes','#no','#howMany','#rsvpPre'].forEach(q => { const el = $(q); if (el) el.style.display = closed ? 'none' : ''; });
   $('#rsvpNote').classList.toggle('closed', closed);
-  if (closed){ note((prev ? rtxt(prev) + ' ' : '') + 'Les réponses sont closes depuis le 31 octobre 2026. Pour toute information, appelez Tsidy ou Njara.'); return; }
+  if (closed){ note((prev ? rtxt(prev) + ' ' : '') + 'Les réponses sont closes depuis le 6 novembre 2026 au soir. Pour toute information, appelez Tsidy ou Njara.'); return; }
   if (prev && prev.r === 'Vient' && prev.p) { count = prev.a ?? prev.p; kids = prev.e || 0; updateRsvp(); }
   navShow(prev, true);
 };
@@ -851,7 +851,7 @@ $('#nPlus').addEventListener('click', e => { e.stopPropagation(); ncount++; nUpd
   window.__sending = true; note('Envoi de votre réponse…');
   window.__saveRsvp({ familyId: guest ? guest.id : '', famille: fenc(r), places: guest ? guest.s : 0, reponse: r.r, personnes: r.p, date: Date.now() })
     .then(() => { rset(r); note(thanks); navShow(r); })
-    .catch(() => note(Date.now() >= DEADLINE ? 'Les réponses sont closes depuis le 31 octobre 2026.' : 'L’envoi a échoué. Vérifiez votre connexion et réessayez, ou appelez Tsidy ou Njara.'))
+    .catch(() => note(Date.now() >= DEADLINE ? 'Les réponses sont closes depuis le 6 novembre 2026.' : 'L’envoi a échoué. Vérifiez votre connexion et réessayez, ou appelez Tsidy ou Njara.'))
     .finally(() => { window.__sending = false; });
 }));
 function resetInvite(){
@@ -906,8 +906,8 @@ function atT(f, tid){
 }
 const atTable = tid => families.map(f => [f, atT(f, tid)]).filter(([, n]) => n > 0);
 const invLink = f => GUEST_URL + '?i=' + enc({n:f.name, s:f.seats, id:f.id, ...(f.adults != null ? {a:f.adults, e:f.kids||0} : {})});
-const remText = f => `Bonjour ${f.name},\nPetit rappel : c'est aujourd'hui le dernier jour pour confirmer votre venue à nos Noces d'Étain et au baptême de Mihaja Kael, le samedi 7 novembre 2026.\nVotre invitation et la réponse en un clic : ${invLink(f)}\nMerci beaucoup !\nTsidy & Njara`;
-const invText = f => `Bonjour ${f.name},\nNous avons la joie de vous inviter à nos Noces d'Étain (10 ans de mariage) et au baptême de notre fils Andriatsididika Mihaja Kael, le samedi 7 novembre 2026 à 8h.\nVotre invitation : ${invLink(f)}\nMerci de confirmer avant le 31 octobre.\nTsidy & Njara`;
+const remText = f => `Bonjour ${f.name},\nBonne nouvelle : vous pouvez encore confirmer votre venue à nos Noces d'Étain et au baptême de Mihaja Kael (samedi 7 novembre 2026), jusqu'au 6 novembre au soir.\nVotre invitation et la réponse en un clic : ${invLink(f)}\nMerci beaucoup !\nTsidy & Njara`;
+const invText = f => `Bonjour ${f.name},\nNous avons la joie de vous inviter à nos Noces d'Étain (10 ans de mariage) et au baptême de notre fils Andriatsididika Mihaja Kael, le samedi 7 novembre 2026 à 8h.\nVotre invitation : ${invLink(f)}\nMerci de confirmer avant le 6 novembre.\nTsidy & Njara`;
 
 const ready = {}; let autoDone = false;
 async function autoSync(){ if (autoDone || !ready.f || !ready.t) return; autoDone = true;
