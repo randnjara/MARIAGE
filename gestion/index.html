@@ -321,7 +321,7 @@ html.gen #s4 .maps{margin-top:70px!important;gap:36px!important;margin-left:-70p
 
   <!-- 0. film -->
   <section class="scene" id="s0">
-    <video id="film" playsinline webkit-playsinline preload="metadata" poster="../film.jpg?v=14"><source src="../film.mp4?v=35" type="video/mp4"></video>
+    <video id="film" playsinline webkit-playsinline preload="metadata" poster="../film.jpg?v=14"><source src="../film.mp4?v=36" type="video/mp4"></video>
     <button type="button" id="playBtn" hidden><span class="pb-i">▶</span><span class="pb-t">Touchez pour ouvrir<br>l’invitation</span></button>
     <button type="button" id="skipBtn">Passer ›</button>
     <button type="button" id="sndBtn" hidden>🔊&nbsp; Activer le son</button>
@@ -403,8 +403,8 @@ const run=()=>document.querySelectorAll('.flw[data-g]').forEach(e=>{if(!e.firstC
         <div class="rsvp-note" id="rsvpNote" hidden></div>
         <div class="navc" id="navCard" hidden>
           <div class="script" style="font-size:62px;line-height:1">Transport offert</div>
-          <div class="kicker" style="font-size:26px;margin-top:6px">Église → Le Camélia</div>
-          <p>Aller : de l’Église Christ Roi Manjakaray vers Le Camélia, Ankadikely Ilafy.<br>Retour organisé selon votre quartier.</p>
+          <div class="kicker" style="font-size:26px;margin-top:6px">Église → Espace Le Camélia</div>
+          <p>Aller : de l’Église Christ Roi Manjakaray vers l’Espace Le Camélia, Ankadikely Ilafy.<br>Retour organisé selon votre quartier.</p>
           <div class="srow"><span class="slab">Places</span><div class="stepper"><button type="button" id="nMinus" aria-label="Une place de moins">−</button><output id="nCnt">1</output><button type="button" id="nPlus" aria-label="Une place de plus">+</button></div></div>
           <label for="nQ" class="nql">Veuillez indiquer votre quartier pour le retour :</label>
           <input id="nQ" maxlength="30" placeholder="Ex. : Analakely, Ivandry…" autocomplete="off">
@@ -421,7 +421,7 @@ const run=()=>document.querySelectorAll('.flw[data-g]').forEach(e=>{if(!e.firstC
       </div>
       <div class="maps rv" style="--d:1.6s">
         <a href="https://www.google.com/maps/search/?api=1&amp;query=%C3%89glise+Christ+Roi+Manjakaray+Antananarivo" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z" fill="currentColor"/></svg>Map église</a>
-        <a href="https://www.google.com/maps/search/?api=1&amp;query=Le+Camelia+Ankadikely+Ilafy+Antananarivo" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z" fill="currentColor"/></svg>Map Le Camélia</a>
+        <a href="https://www.google.com/maps/search/?api=1&amp;query=Le+Camelia+Ankadikely+Ilafy+Antananarivo" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z" fill="currentColor"/></svg>Map Espace Le Camélia</a>
       </div>
     </div>
   </section>
@@ -580,9 +580,9 @@ html.mode-admin #wrap{display:none}
   </header>
   <div class="two-inv">
     <div class="inv-t"><h3>Invitation générale</h3><p>Une seule invitation pour tout un groupe (famille de Neny Tsidy, groupe Messenger) : pas de nom, pas de formulaire, confirmation par Messenger ou appel.</p>
-      <div class="acts"><button class="a-btn sm sec" type="button" id="gView">Voir</button><button class="a-btn sm" type="button" id="gCopy">Copier le lien général</button><a class="a-btn sm sec" style="text-decoration:none;display:inline-flex;align-items:center" target="_blank" rel="noopener" href="video-generale.mp4?v=18">Vidéo</a></div></div>
+      <div class="acts"><button class="a-btn sm sec" type="button" id="gView">Voir</button><button class="a-btn sm" type="button" id="gCopy">Copier le lien général</button><a class="a-btn sm sec" style="text-decoration:none;display:inline-flex;align-items:center" target="_blank" rel="noopener" href="video-generale.mp4?v=19">Vidéo</a></div></div>
     <div class="inv-t"><h3>Invitation personnelle</h3><p>Une invitation par famille, avec son nom, son nombre de places et le formulaire de réponse. Le lien se copie sur la ligne de chaque famille (« Copier le lien »).</p>
-      <div class="acts"><button class="a-btn sm sec" type="button" id="pView">Voir un exemple</button><a class="a-btn sm sec" style="text-decoration:none;display:inline-flex;align-items:center" target="_blank" rel="noopener" href="video-invitation.mp4?v=21">Vidéo</a></div></div>
+      <div class="acts"><button class="a-btn sm sec" type="button" id="pView">Voir un exemple</button><a class="a-btn sm sec" style="text-decoration:none;display:inline-flex;align-items:center" target="_blank" rel="noopener" href="video-invitation.mp4?v=22">Vidéo</a></div></div>
   </div>
   <p class="share" id="shareNote">Chaque famille reçoit son propre lien. Quand une famille répond sur son invitation, sa réponse s'affiche ici toute seule. Cette page n'est visible qu'avec votre compte Google.</p>
   <section class="stats" id="stats"></section>
@@ -1218,7 +1218,7 @@ function detailRows(){ const b = $('#stats').querySelector(`[data-l="${detailKey
   return families.filter(STF[k]).sort((a,b)=>(a.cat||'').localeCompare(b.cat||'') || a.name.localeCompare(b.name)).map(f => ({ 'Famille':f.name, 'Catégorie':f.cat||'', 'Table':tablesOf(f), 'Adultes':f.adults ?? '', 'Enfants':f.kids ?? '', 'Places invitées':f.seats, 'Réponse':LAB[f.status||'attente'], 'Personnes prévues':heads(f), 'Transport':f.status==='oui' && f.navette ? f.navette : '', 'Quartier retour':f.status==='oui' && f.navette ? (f.quartier||'') : '', 'Téléphone':f.phone||'' })); }
 function renderDetail(){ const d = $('#detail'); if (!detailKey){ d.hidden = true; return; } d.hidden = false; const R = detailRows(), cols = R.length ? Object.keys(R[0]) : [];
   d.innerHTML = `<div class="dh"><h3>${esc(detailKey)} · ${R.length} famille${R.length>1?'s':''}, ${R.reduce((a,r)=>a+(+r['Personnes prévues']||0),0)} personnes prévues</h3>${detailKey==='Transport' ? `<button class="a-btn sec" type="button" id="dCap">Places de transport : ${navCap()}</button>` : ''}<button class="a-btn sec" type="button" id="dExp">Exporter en Excel</button><button class="a-btn sec" type="button" id="dClose">Fermer</button></div>`
-   + (detailKey==='Transport' ? (()=>{ const n = families.filter(STF.nav).reduce((a,f)=>a+f.navette,0), c = navCap(); return `<p class="navinfo${n>c?' over':''}">${n} place${n>1?'s':''} réservée${n>1?'s':''} sur ${c}${n>c ? ` : ${n-c} de trop, prévoir une autre voiture` : ` : ${c-n} libre${c-n>1?'s':''}`}. Aller : église → Le Camélia.</p>`; })() : '')
+   + (detailKey==='Transport' ? (()=>{ const n = families.filter(STF.nav).reduce((a,f)=>a+f.navette,0), c = navCap(); return `<p class="navinfo${n>c?' over':''}">${n} place${n>1?'s':''} réservée${n>1?'s':''} sur ${c}${n>c ? ` : ${n-c} de trop, prévoir une autre voiture` : ` : ${c-n} libre${c-n>1?'s':''}`}. Aller : église → Espace Le Camélia.</p>`; })() : '')
    + (R.length ? `<div class="tw"><table><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr>${R.map(r=>`<tr>${cols.map(c=>`<td>${esc(String(r[c]))}</td>`).join('')}</tr>`).join('')}</table></div>` : '<p>Aucune famille.</p>'); }
 $('#stats').addEventListener('click', e => { const b = e.target.closest('[data-l]'); if (!b) return; detailKey = detailKey===b.dataset.l ? '' : b.dataset.l; render(); });
 $('#detail').addEventListener('click', async e => {
