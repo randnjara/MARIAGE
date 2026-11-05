@@ -1083,13 +1083,14 @@ function planFromWorkbook(wb){
       if (/^(total|famille|ami|amie)$/i.test(nm)) continue;
       const a = num(r[ac]), e = ec >= 0 ? num(r[ec]) : 0, b = bc >= 0 ? num(r[bc]) : 0; if (!(a + e + b)) continue;
       let key = nkey(nm), name = nm; if (seen[key]){ let k = 2; while (seen[nkey(nm + ' (' + k + ')')]) k++; name = nm + ' (' + k + ')'; key = nkey(name); dups.push(`${nm} (${cat}, ligne ${i + 1})`); }
-      seen[key] = 1; fams.push({ name, key, cat, adults: a, kids: e + b, bebes: b, seats: a + e + b, s: {}, placed: 0 });
+      seen[key] = 1; fams.push({ name, key, bk: nkey(nm), cat, adults: a, kids: e + b, bebes: b, seats: a + e + b, s: {}, placed: 0 });
     }
   });
   // un nom écrit sous une table peut venir d'une autre feuille (catégorie) : on le rattache à sa famille
   for (const bl of blocks){
-    const same = fams.find(f => f.key === bl.key && f.cat === bl.cat), others = fams.filter(f => f.key === bl.key && f.cat !== bl.cat);
-    const f = same || (others.length ? others.sort((x, y) => (x.placed - x.seats) - (y.placed - y.seats))[0] : null);
+    // plusieurs familles du même nom (TIANA, TIANA (2)…) : on prend celle dont les places restantes correspondent le mieux
+    const best = l => l.length ? l.slice().sort((x, y) => { const rx = x.seats - x.placed, ry = y.seats - y.placed, sx = rx === bl.n ? 0 : rx > bl.n ? 1 : 2, sy = ry === bl.n ? 0 : ry > bl.n ? 1 : 2; return sx - sy || ry - rx; })[0] : null;
+    const f = best(fams.filter(f => f.bk === bl.key && f.cat === bl.cat && !f.fromTable)) || best(fams.filter(f => f.bk === bl.key && f.cat !== bl.cat && !f.fromTable && f.seats - f.placed >= bl.n));
     if (!f){ // nom écrit seulement sous une table : on crée la famille avec ce nombre de personnes
       let o = fams.find(x => x.key === bl.key && x.cat === bl.cat && x.fromTable);
       if (!o){ o = { name: bl.name, key: bl.key, cat: bl.cat, adults: 0, kids: 0, bebes: 0, seats: 0, s: {}, placed: 0, fromTable: true }; fams.push(o); orphans.push({ name: bl.name, cat: bl.cat, table: bl.no, n: bl.n }); }
@@ -1098,7 +1099,7 @@ function planFromWorkbook(wb){
   }
   for (const f of fams){ const tl = Object.entries(f.s).sort((x, y) => y[1] - x[1] || x[0] - y[0]);
     f.tableNo = tl.length ? +tl[0][0] : 0; f.tnote = tl.length > 1 ? tl.map(([t, c]) => `table ${t} : ${c}`).join(', ') : ''; f.split = tl.length ? Object.fromEntries(tl) : null;
-    delete f.s; delete f.placed; delete f.key; delete f.fromTable; }
+    delete f.s; delete f.placed; delete f.key; delete f.bk; delete f.fromTable; }
   return { tnames, fams, orphans, dups, noname };
 }
 
@@ -1180,7 +1181,9 @@ $('#aSync').addEventListener('click', e => syncSheet(e.shiftKey ? 'ask' : true))
 $('#aSync').addEventListener('contextmenu', e => { e.preventDefault(); syncSheet('ask'); });
 async function runPlanImport(P){
   const tid = {}; let tn = 0, added = 0, upd = 0;
-  for (const [no, name] of Object.entries(P.tnames)){
+  // seules les tables où l'Excel place quelqu'un (« TABLE n » avec des noms dessous)
+  const usedNo = new Set(P.fams.flatMap(x => Object.keys(x.split || {}).map(Number)));
+  for (const [no, name] of Object.entries(P.tnames).filter(([no]) => usedNo.has(+no))){
     const ex = tables.find(t => +t.order === +no) || tables.find(t => norm(t.name) === norm(name));
     if (ex){ if (ex.name !== name || +ex.order !== +no) await tdoc(ex.id).update({ name, order: +no }); tid[no] = ex.id; }
     else { const r = await db.collection('tables').add({ name, capacity: 10, order: +no }); tid[no] = r && r.id; }
@@ -1194,12 +1197,17 @@ async function runPlanImport(P){
     else { await db.collection('families').add({ ...data, phone: '', status: 'attente', coming: null, sent: false, created: Date.now() }); added++; }
     $('#iGo').textContent = `Familles… ${added + upd}/${P.fams.length}`;
   }
+  // tables vides qui ne sont plus dans le plan de l'Excel (ex. 36 et suivantes) : supprimées
+  const usedId = new Set(Object.values(tid)); let tdel = 0;
+  for (const t of tables.slice()){ if (usedId.has(t.id)) continue;
+    const kept = families.some(f => (f.table === t.id || (f.alloc && f.alloc[t.id])) && !P.fams.some(x => norm(x.name) === norm(f.name) && x.cat === (f.cat || '')));
+    if (!kept){ try { await tdoc(t.id).delete(); tdel++; } catch(e){} } }
   const keep = new Set(P.fams.map(x => norm(x.name) + '|' + x.cat)), gone = families.filter(f => !keep.has(norm(f.name) + '|' + (f.cat || '')));
   let del = 0;
   if (gone.length && confirm(`${gone.length} famille${gone.length>1?'s':''} de la gestion ne ${gone.length>1?'sont':'est'} plus dans l’Excel :\n\n${gone.slice(0,25).map(f => '• ' + f.name + (f.cat ? ' (' + f.cat + ')' : '')).join('\n')}${gone.length>25?'\n…':''}\n\nLes supprimer de la gestion ?`)){
     for (const f of gone){ await fdoc(f.id).delete(); del++; }
   }
-  return `${tn} tables, ${added} famille${added>1?'s':''} ajoutée${added>1?'s':''}, ${upd} mise${upd>1?'s':''} à jour` + (del ? `, ${del} supprimée${del>1?'s':''}` : '');
+  return `${tn} tables, ${added} famille${added>1?'s':''} ajoutée${added>1?'s':''}, ${upd} mise${upd>1?'s':''} à jour` + (del ? `, ${del} supprimée${del>1?'s':''}` : '') + (tdel ? `, ${tdel} table${tdel>1?'s':''} vide${tdel>1?'s':''} supprimée${tdel>1?'s':''}` : '');
 }
 $('#iGo').addEventListener('click', async () => {
   if (impPlan){ $('#iGo').disabled = true; try { const m = await runPlanImport(impPlan); $('#ovImp').hidden = true; toast(m); } catch(err){ toast('Import interrompu : ' + (err.message||err.code)); } $('#iGo').disabled = false; return; }
