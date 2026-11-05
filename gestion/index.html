@@ -619,7 +619,7 @@ html.mode-admin #wrap{display:none}
       <input id="tName" placeholder="Nom de la table (ex. Table Antsirabe)" aria-label="Nom de la table" style="flex:1 1 220px">
       <input id="tCap" type="number" min="1" value="10" aria-label="Places" style="width:80px">
       <button class="a-btn" type="button" id="tAdd">Ajouter la table</button>
-      <button class="a-btn sec" type="button" id="tAuto">Placer automatiquement</button><button class="a-btn sec" type="button" id="tCards">Cartes de table à imprimer</button>
+      <button class="a-btn sec" type="button" id="tAuto">Placer automatiquement</button><button class="a-btn sec" type="button" id="tCards">Cartes de table à imprimer</button><button class="a-btn sec" type="button" id="tNames">Noms de table (4 par A4)</button>
     </div>
     <div class="tables-wrap"><aside class="side" id="unassigned"></aside><div class="grid" id="tGrid"></div></div>
   </section>
@@ -1426,6 +1426,32 @@ function renderTables(){
   </article>`; }).join('');
 }
 const tdoc = id => db.collection('tables').doc(id);
+$('#tNames').addEventListener('click', () => {
+  if (!tables.length) return toast('Aucune table à imprimer');
+  const w = window.open('', '_blank'); if (!w) return toast('Autorisez les fenêtres pour imprimer');
+  const G = window.__G || {}, top = G.top ? G.top() : '', bot = G.bottom ? G.bottom() : '';
+  const fonts = [...document.querySelectorAll('style')].map(s => s.textContent).filter(t => t.includes('@font-face')).join('\n');
+  const orn = `<svg class="orn" viewBox="0 0 240 30"><path d="M8 15H92M148 15H232" stroke="#b8925f" stroke-width="1.2"/><circle cx="96" cy="15" r="2.4" fill="#b8925f"/><circle cx="144" cy="15" r="2.4" fill="#b8925f"/><path d="M120 26C108 18 104 13 104 9a6.5 6.5 0 0 1 16-2 6.5 6.5 0 0 1 16 2c0 4-4 9-16 17z" fill="none" stroke="#6b4a2f" stroke-width="1.4"/><path d="M120 8v12M115 12.5h10" stroke="#b8925f" stroke-width="1.6"/></svg>`;
+  const T = tables.slice().sort((a,b)=>(a.order??999)-(b.order??999) || String(a.name).localeCompare(String(b.name)));
+  const cards = T.map(t => { const raw = String(t.name || '').trim(), m = /^\s*(?:table\s*)?(\d{1,3})\s*[.\-)]?\s*(.*)$/i.exec(raw), no = m ? m[1] : '', nm = m ? m[2] : raw;
+    return `<section class="card"><div class="frame"></div><div class="g top">${top}</div><div class="tw">Table</div>${no ? `<div class="no">${esc(no)}</div>` : ''}${orn}${nm ? `<div class="nm${nm.length > 11 ? ' long' : ''}">${esc(nm)}</div>` : ''}<div class="foot"><b>Tsidy &amp; Njara</b>Noces d’Étain · Baptême de Mihaja Kaël<br>7 novembre 2026</div><div class="g bot">${bot}</div></section>`; });
+  let pages = ''; for (let i = 0; i < cards.length; i += 4) pages += `<div class="sheet">${cards.slice(i, i + 4).join('')}</div>`;
+  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Noms de table</title><style>${fonts}
+@page{size:A4 portrait;margin:0}*{box-sizing:border-box}body{margin:0;background:#eee}
+.sheet{width:210mm;height:296mm;overflow:hidden;display:grid;grid-template-columns:105mm 105mm;grid-template-rows:148mm 148mm;background:#fff;break-after:page;page-break-after:always;margin:0 auto 8mm}
+.card{position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fffdf9;color:#6b4a2f;border-right:.2mm dashed #ccc;border-bottom:.2mm dashed #ccc;padding:22mm 0 22mm}
+.card:nth-child(2n){border-right:0}.card:nth-child(n+3){border-bottom:0}
+.frame{position:absolute;inset:6.5mm;border:.4mm solid #c9a978;outline:.2mm solid #c9a978;outline-offset:1mm;border-radius:50mm 50mm 4mm 4mm;pointer-events:none}
+.g{width:66%;position:absolute;left:17%;z-index:1}.g svg{width:100%;height:auto;display:block}.g.top{top:-3mm}.g.bot{bottom:.5mm}
+.tw{font:400 30pt 'Great Vibes',cursive;color:#a87c50;line-height:1;margin-top:auto}
+.no{font:600 74pt 'Cormorant Garamond',Georgia,serif;color:#6b4a2f;line-height:1;font-variant-numeric:lining-nums;font-feature-settings:'lnum'}
+.orn{width:46mm;height:auto;margin:1.5mm 0;flex:none}
+.nm{font:400 44pt 'Great Vibes',cursive;color:#6b4a2f;line-height:1.1;text-align:center;padding:0 9mm}.nm.long{font-size:34pt}
+.foot{margin-top:auto;text-align:center;font:500 8pt 'Cormorant Garamond',Georgia,serif;color:#a87c50;line-height:1.3}.foot b{display:block;font:400 15pt 'Great Vibes',cursive;color:#6b4a2f}
+.bar{text-align:center;font:14px sans-serif;padding:10px}
+@media print{body{background:#fff}.sheet{margin:0}.bar{display:none}}</style></head><body><div class="bar"><button onclick="print()" style="font-size:16px;padding:8px 16px">Imprimer</button> 4 noms de table par feuille A4, à découper selon les pointillés.</div>${pages}</body></html>`);
+  w.document.close();
+});
 $('#tCards').addEventListener('click', () => {
   if (!tables.length) return toast('Aucune table à imprimer');
   const w = window.open('', '_blank'); if (!w) return toast('Autorisez les fenêtres pour imprimer');
