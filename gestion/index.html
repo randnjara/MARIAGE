@@ -1273,7 +1273,7 @@ function renderList(){
   const g = $('#slGrid'); if (!g) return; const q = norm($('#slQ').value || '');
   const T = tables.slice().sort((a,b)=>(a.order??999)-(b.order??999) || a.name.localeCompare(b.name));
   let bad = 0, hit = 0;
-  const card = (title, rows, n, cap) => { const off = cap == null || n !== cap; if (cap != null && off) bad++;
+  const card = (title, rows, n, cap, dec = []) => { const off = cap == null || n !== cap; if (cap != null && off) bad++;
     const msg = cap == null ? `${n} personne${n>1?'s':''} à placer` : `${n} / ${cap}` + (off ? (n > cap ? ` · ${n-cap} de trop` : ` · manque ${cap-n}`) : ' ✓');
     // table ronde : les familles écrites autour, le nombre au centre
     const W = 400, H = 290, cx = 200, cy = 145, R = 54, RL = 72, nR = rows.length;
@@ -1292,13 +1292,16 @@ function renderList(){
       <text x="${cx}" y="${cy-4}" text-anchor="middle" font-size="17" font-weight="700" fill="#52331c">${esc(title.length>14?title.slice(0,13)+'…':title)}</text>
       <text x="${cx}" y="${cy+18}" text-anchor="middle" font-size="15" font-weight="700" fill="${off?'#c0392b':'#4f6b3a'}">${cap==null?n:n+' / '+cap}</text>${lab}
       ${nR ? '' : `<text x="${cx}" y="${cy+R+26}" text-anchor="middle" font-size="13" fill="#8e6137">Personne</text>`}</svg>`;
-    const nt = rows.filter(([f]) => f.status==='oui' && f.coming != null && f.coming !== res(f)).map(([f]) => `${esc(f.name)} : ${f.coming} confirmé${f.coming>1?'s':''} pour ${res(f)} place${res(f)>1?'s':''} dans l’Excel`);
-    return `<section class="slc${off?' bad':''}"><h4><span>${esc(title)}</span><em>${msg}</em></h4>${svg}${nt.length ? `<p class="slnote">ℹ ${nt.join('<br>ℹ ')}</p>` : ''}</section>`; };
-  const html = T.map(t => { const fs = atTable(t.id); return card(t.name, fs, fs.reduce((a,[,k])=>a+k,0), t.capacity||10); });
+    const nt = rows.filter(([f]) => f.status==='oui' && f.coming != null && f.coming !== res(f)).map(([f]) => `ℹ ${esc(f.name)} : ${f.coming} confirmé${f.coming>1?'s':''} pour ${res(f)} place${res(f)>1?'s':''} dans l’Excel`);
+    dec.forEach(([f, k]) => { const m = q && norm(f.name).includes(q); if (m) hit++; nt.push(`<span${m?' style="background:#ffe08a;font-weight:700"':''}>✗ ${esc(f.name)} a répondu « non » : ${k} place${k>1?'s':''} libre${k>1?'s':''} (prévu${k>1?'s':''} dans l’Excel)</span>`); });
+    return `<section class="slc${off?' bad':''}"><h4><span>${esc(title)}</span><em>${msg}</em></h4>${svg}${nt.length ? `<p class="slnote">${nt.join('<br>')}</p>` : ''}</section>`; };
+  const decAt = tid => families.filter(f => f.status === 'non' && (f.table === tid || (f.alloc && f.alloc[tid]))).map(f => [f, hasAl(f) ? (+f.alloc[tid] || 0) : (f.seats || 0)]).filter(([, k]) => k > 0);
+  const html = T.map(t => { const fs = atTable(t.id); return card(t.name, fs, fs.reduce((a,[,k])=>a+k,0), t.capacity||10, decAt(t.id)); });
   const un = families.filter(f => f.status !== 'non' && pl(f) > 0 && !tables.some(t => atT(f, t.id) > 0)).sort((a,b)=>a.name.localeCompare(b.name)).map(f => [f, pl(f)]);
   if (un.length){ html.push(card('Sans table', un, un.reduce((a,[,k])=>a+k,0), null)); }
   g.innerHTML = html.join('') || '<div class="empty"><h3>Aucune table</h3></div>';
-  $('#slSum').innerHTML = (bad ? `<b style="color:#c0392b">⚠ ${bad} table${bad>1?'s':''} en rouge</b> (personnes en trop ou manquantes)` : '<b style="color:#4f6b3a">✓ Toutes les tables ont le bon nombre</b>') + (q ? ` · ${hit} résultat${hit>1?'s':''} pour « ${esc($('#slQ').value)} »` : '');
+  const lost = q ? families.filter(f => norm(f.name).includes(q) && !tables.some(t => atT(f, t.id) > 0) && !(f.status === 'non' && tables.some(t => f.table === t.id || (f.alloc && f.alloc[t.id])))) : [];
+  $('#slSum').innerHTML = (bad ? `<b style="color:#c0392b">⚠ ${bad} table${bad>1?'s':''} en rouge</b> (personnes en trop ou manquantes)` : '<b style="color:#4f6b3a">✓ Toutes les tables ont le bon nombre</b>') + (q ? ` · ${hit} résultat${hit>1?'s':''} pour « ${esc($('#slQ').value)} »` : '') + lost.map(f => `<br>« ${esc(f.name)} » : ${f.status==='non' ? 'a répondu « non »' : 'n’est placé à aucune table'}${f.cat ? ' (' + esc(f.cat) + ')' : ''}`).join('');
   if (q && hit){ const el = g.querySelector('.slhit'); if (el && renderList.lastQ !== q) el.scrollIntoView({block:'center', behavior:'smooth'}); }
   renderList.lastQ = q;
 }
