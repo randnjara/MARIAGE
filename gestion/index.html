@@ -902,17 +902,15 @@ let db = null, families = [], tables = [], adminStarted = false, tab = 'fam', ed
 const norm = s => String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
 const waPhone = p => { let d = String(p||'').replace(/\D/g,''); if (!d) return ''; if (d.startsWith('00')) d = d.slice(2); if (d.length===10 && d[0]==='0') d = '261'+d.slice(1); else if (d.length===9) d = '261'+d; return d; };
 const heads = f => f.status==='non' ? 0 : f.status==='oui' ? (f.coming ?? f.seats) : f.seats;
-// places gardées à table : celles de l'Excel, même si la famille a confirmé moins (plus si elle a confirmé plus)
-const pl = f => f.status==='non' ? 0 : f.status==='oui' ? Math.max(f.seats||0, f.coming ?? 0) : (f.seats||0);
+// places gardées à table : toujours celles de l'Excel (plan de table), quelle que soit la réponse, sauf « non »
+const hasAl = f => !!(f.alloc && f.table && f.alloc[f.table] != null);
+const res = f => hasAl(f) ? Object.entries(f.alloc).reduce((a, [t, c]) => a + (tables.some(x => x.id === t) ? (+c || 0) : 0), 0) : (f.seats||0);
+const pl = f => f.status==='non' ? 0 : res(f);
 // personnes d'une famille assises à une table (une famille peut être répartie sur plusieurs tables)
 function atT(f, tid){
-  const h = pl(f); if (!h || !f.table) return 0;
-  const a = f.alloc && f.alloc[f.table] != null ? f.alloc : null;
-  if (!a) return tid === f.table ? h : 0;
-  if (f.status !== 'oui') return tables.some(x => x.id === tid) ? (a[tid] || 0) : 0;
-  let rest = h; const out = {};
-  for (const [t, c] of Object.entries(a)){ if (t === f.table || !tables.some(x => x.id === t)) continue; const k = Math.min(c, rest); out[t] = k; rest -= k; }
-  out[f.table] = rest; return out[tid] || 0;
+  if (!pl(f) || !f.table) return 0;
+  if (!hasAl(f)) return tid === f.table ? pl(f) : 0;
+  return tables.some(x => x.id === tid) ? (+f.alloc[tid] || 0) : 0;
 }
 const atTable = tid => families.map(f => [f, atT(f, tid)]).filter(([, n]) => n > 0);
 const invLink = f => GUEST_URL + '?i=' + enc({n:f.name, s:f.seats, id:f.id, ...(f.adults != null ? {a:f.adults, e:f.kids||0} : {})});
@@ -1286,7 +1284,7 @@ function renderList(){
       <text x="${cx}" y="${cy-4}" text-anchor="middle" font-size="17" font-weight="700" fill="#52331c">${esc(title.length>14?title.slice(0,13)+'…':title)}</text>
       <text x="${cx}" y="${cy+18}" text-anchor="middle" font-size="15" font-weight="700" fill="${off?'#c0392b':'#4f6b3a'}">${cap==null?n:n+' / '+cap}</text>${lab}
       ${nR ? '' : `<text x="${cx}" y="${cy+R+26}" text-anchor="middle" font-size="13" fill="#8e6137">Personne</text>`}</svg>`;
-    const nt = rows.filter(([f]) => f.status==='oui' && f.coming != null && f.coming !== f.seats).map(([f]) => `${esc(f.name)} : ${f.coming} confirmé${f.coming>1?'s':''} sur ${f.seats} place${f.seats>1?'s':''}`);
+    const nt = rows.filter(([f]) => f.status==='oui' && f.coming != null && f.coming !== res(f)).map(([f]) => `${esc(f.name)} : ${f.coming} confirmé${f.coming>1?'s':''} pour ${res(f)} place${res(f)>1?'s':''} dans l’Excel`);
     return `<section class="slc${off?' bad':''}"><h4><span>${esc(title)}</span><em>${msg}</em></h4>${svg}${nt.length ? `<p class="slnote">ℹ ${nt.join('<br>ℹ ')}</p>` : ''}</section>`; };
   const html = T.map(t => { const fs = atTable(t.id); return card(t.name, fs, fs.reduce((a,[,k])=>a+k,0), t.capacity||10); });
   const un = families.filter(f => f.status !== 'non' && pl(f) > 0 && !tables.some(t => atT(f, t.id) > 0)).sort((a,b)=>a.name.localeCompare(b.name)).map(f => [f, pl(f)]);
