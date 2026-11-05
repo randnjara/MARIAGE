@@ -501,6 +501,7 @@ html.mode-admin #wrap{display:none}
 .slc h4{margin:0 0 8px;display:flex;justify-content:space-between;gap:8px;align-items:baseline;font:600 18px var(--serif);color:#52331c}.slc h4 em{font:600 13px var(--sans);font-style:normal;color:#4f6b3a;white-space:nowrap}.slc.bad h4 em{color:#c0392b}
 .slc ul{list-style:none;margin:0;padding:0}.slc li{display:flex;align-items:center;gap:8px;padding:4px 0;border-top:1px solid rgba(160,120,80,.15);font:14px var(--sans)}.slc li b{margin-left:auto;font-weight:600}.slc li i{width:9px;height:9px;border-radius:50%;flex:none}
 .slc li.slhit{background:#ffe9a8;border-radius:6px;padding-left:6px;font-weight:600}
+.slnote{margin:4px 0 0;font:13px/1.45 var(--sans);color:#6b4a2f}
 @media print{#salleList{display:none!important}}
 #salle3d{position:relative;height:min(78vh,760px);min-height:440px;border-radius:14px;background:#f4ece0;border:1px solid var(--line);overflow:hidden}
 #s3ctl{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:6px;z-index:2}#s3ctl button{width:40px;height:40px;border-radius:50%;border:1px solid #c9a87c;background:rgba(255,251,244,.95);font:600 20px/1 var(--sans);color:#52331c;cursor:pointer}
@@ -901,9 +902,11 @@ let db = null, families = [], tables = [], adminStarted = false, tab = 'fam', ed
 const norm = s => String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
 const waPhone = p => { let d = String(p||'').replace(/\D/g,''); if (!d) return ''; if (d.startsWith('00')) d = d.slice(2); if (d.length===10 && d[0]==='0') d = '261'+d.slice(1); else if (d.length===9) d = '261'+d; return d; };
 const heads = f => f.status==='non' ? 0 : f.status==='oui' ? (f.coming ?? f.seats) : f.seats;
+// places gardées à table : celles de l'Excel, même si la famille a confirmé moins (plus si elle a confirmé plus)
+const pl = f => f.status==='non' ? 0 : f.status==='oui' ? Math.max(f.seats||0, f.coming ?? 0) : (f.seats||0);
 // personnes d'une famille assises à une table (une famille peut être répartie sur plusieurs tables)
 function atT(f, tid){
-  const h = heads(f); if (!h || !f.table) return 0;
+  const h = pl(f); if (!h || !f.table) return 0;
   const a = f.alloc && f.alloc[f.table] != null ? f.alloc : null;
   if (!a) return tid === f.table ? h : 0;
   if (f.status !== 'oui') return tables.some(x => x.id === tid) ? (a[tid] || 0) : 0;
@@ -1241,7 +1244,7 @@ function renderSalle(){
   tableAlert();
   const T = tables.slice().sort((a,b)=>(a.order??999)-(b.order??999) || a.name.localeCompare(b.name));
   const W = 340, H = 280, cx = 170, cy = 132, R = 46, RC = 68, RL = 84;
-  const box = t => { const seats = []; atTable(t.id).forEach(([f, n]) => { const off = tables.filter(x => x.id !== t.id && (x.order??999) < (t.order??999)).reduce((a, x) => a + atT(f, x.id), 0), many = heads(f) > 1; for (let i=0;i<n;i++) seats.push({f, lab: many ? `${f.name} ${off+i+1}` : f.name}); });
+  const box = t => { const seats = []; atTable(t.id).forEach(([f, n]) => { const off = tables.filter(x => x.id !== t.id && (x.order??999) < (t.order??999)).reduce((a, x) => a + atT(f, x.id), 0), many = pl(f) > 1; for (let i=0;i<n;i++) seats.push({f, lab: many ? `${f.name} ${off+i+1}` : f.name}); });
     const n = Math.max(t.capacity||10, seats.length); let g = '';
     for (let i=0;i<n;i++){ const a = -Math.PI/2 + i*2*Math.PI/n, x = cx+RC*Math.cos(a), y = cy+RC*Math.sin(a), s = seats[i];
       const col = !s ? '#fff' : s.f.status==='oui' ? '#4f6b3a' : '#b8875a';
@@ -1283,9 +1286,10 @@ function renderList(){
       <text x="${cx}" y="${cy-4}" text-anchor="middle" font-size="17" font-weight="700" fill="#52331c">${esc(title.length>14?title.slice(0,13)+'…':title)}</text>
       <text x="${cx}" y="${cy+18}" text-anchor="middle" font-size="15" font-weight="700" fill="${off?'#c0392b':'#4f6b3a'}">${cap==null?n:n+' / '+cap}</text>${lab}
       ${nR ? '' : `<text x="${cx}" y="${cy+R+26}" text-anchor="middle" font-size="13" fill="#8e6137">Personne</text>`}</svg>`;
-    return `<section class="slc${off?' bad':''}"><h4><span>${esc(title)}</span><em>${msg}</em></h4>${svg}</section>`; };
+    const nt = rows.filter(([f]) => f.status==='oui' && f.coming != null && f.coming !== f.seats).map(([f]) => `${esc(f.name)} : ${f.coming} confirmé${f.coming>1?'s':''} sur ${f.seats} place${f.seats>1?'s':''}`);
+    return `<section class="slc${off?' bad':''}"><h4><span>${esc(title)}</span><em>${msg}</em></h4>${svg}${nt.length ? `<p class="slnote">ℹ ${nt.join('<br>ℹ ')}</p>` : ''}</section>`; };
   const html = T.map(t => { const fs = atTable(t.id); return card(t.name, fs, fs.reduce((a,[,k])=>a+k,0), t.capacity||10); });
-  const un = families.filter(f => f.status !== 'non' && heads(f) > 0 && !tables.some(t => atT(f, t.id) > 0)).sort((a,b)=>a.name.localeCompare(b.name)).map(f => [f, heads(f)]);
+  const un = families.filter(f => f.status !== 'non' && pl(f) > 0 && !tables.some(t => atT(f, t.id) > 0)).sort((a,b)=>a.name.localeCompare(b.name)).map(f => [f, pl(f)]);
   if (un.length){ html.push(card('Sans table', un, un.reduce((a,[,k])=>a+k,0), null)); }
   g.innerHTML = html.join('') || '<div class="empty"><h3>Aucune table</h3></div>';
   $('#slSum').innerHTML = (bad ? `<b style="color:#c0392b">⚠ ${bad} table${bad>1?'s':''} en rouge</b> (personnes en trop ou manquantes)` : '<b style="color:#4f6b3a">✓ Toutes les tables ont le bon nombre</b>') + (q ? ` · ${hit} résultat${hit>1?'s':''} pour « ${esc($('#slQ').value)} »` : '');
@@ -1467,12 +1471,12 @@ $('#tGrid').addEventListener('click', async e => {
 $('#tAuto').addEventListener('click', async () => {
   if (!tables.length) return toast('Créez d’abord vos tables');
   const load = Object.fromEntries(tables.map(t => [t.id, atTable(t.id).reduce((a,[,k])=>a+k,0)]));
-  const un = families.filter(f => f.status!=='non' && (!f.table || !(f.table in load))).sort((a,b)=>heads(b)-heads(a));
+  const un = families.filter(f => f.status!=='non' && (!f.table || !(f.table in load))).sort((a,b)=>pl(b)-pl(a));
   let placed = 0, left = 0;
   for (const f of un){
-    const t = tables.filter(t => (t.capacity||10) - load[t.id] >= heads(f)).sort((a,b)=>((a.capacity||10)-load[a.id])-((b.capacity||10)-load[b.id]))[0];
+    const t = tables.filter(t => (t.capacity||10) - load[t.id] >= pl(f)).sort((a,b)=>((a.capacity||10)-load[a.id])-((b.capacity||10)-load[b.id]))[0];
     if (!t){ left++; continue; }
-    load[t.id] += heads(f); await save(fdoc(f.id), {table:t.id, alloc: null}); placed++;
+    load[t.id] += pl(f); await save(fdoc(f.id), {table:t.id, alloc: null}); placed++;
   }
   toast(`${placed} famille${placed>1?'s':''} placée${placed>1?'s':''}` + (left ? `, ${left} sans place libre : ajoutez une table` : ''));
 });
