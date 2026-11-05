@@ -496,7 +496,7 @@ html.mode-admin #wrap{display:none}
 .stab{background:transparent}
 .door{margin:10px auto 0;width:140px;text-align:center;padding:6px;border-top:4px solid #8e6137;color:#8e6137;font:500 13px var(--sans);letter-spacing:.1em;text-transform:uppercase}
 .lg{display:inline-flex;align-items:center;gap:6px;font:14px var(--sans);color:var(--espresso)}.lg i{width:14px;height:14px;border-radius:50%;display:inline-block}
-#slGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+#slGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:12px}
 .slc{background:#fffbf4;border:1px solid #d9c3a0;border-radius:14px;padding:12px 14px}.slc.bad{background:#fdecea;border:2px solid #c0392b}
 .slc h4{margin:0 0 8px;display:flex;justify-content:space-between;gap:8px;align-items:baseline;font:600 18px var(--serif);color:#52331c}.slc h4 em{font:600 13px var(--sans);font-style:normal;color:#4f6b3a;white-space:nowrap}.slc.bad h4 em{color:#c0392b}
 .slc ul{list-style:none;margin:0;padding:0}.slc li{display:flex;align-items:center;gap:8px;padding:4px 0;border-top:1px solid rgba(160,120,80,.15);font:14px var(--sans)}.slc li b{margin-left:auto;font-weight:600}.slc li i{width:9px;height:9px;border-radius:50%;flex:none}
@@ -1266,8 +1266,24 @@ function renderList(){
   let bad = 0, hit = 0;
   const card = (title, rows, n, cap) => { const off = cap == null || n !== cap; if (cap != null && off) bad++;
     const msg = cap == null ? `${n} personne${n>1?'s':''} à placer` : `${n} / ${cap}` + (off ? (n > cap ? ` · ${n-cap} de trop` : ` · manque ${cap-n}`) : ' ✓');
-    const li = rows.map(([f,k]) => { const m = q && norm(f.name).includes(q); if (m) hit++; return `<li class="${m?'slhit':''}"><i style="background:${f.status==='oui'?'#4f6b3a':'#b8875a'}"></i>${esc(f.name)}<b>${k}</b></li>`; }).join('') || '<li style="opacity:.6">Personne</li>';
-    return `<section class="slc${off?' bad':''}"><h4><span>${esc(title)}</span><em>${msg}</em></h4><ul>${li}</ul></section>`; };
+    // table ronde : les familles écrites autour, le nombre au centre
+    const W = 400, H = 290, cx = 200, cy = 145, R = 54, RL = 72, nR = rows.length;
+    let lab = '';
+    rows.forEach(([f,k], i) => { const m = q && norm(f.name).includes(q); if (m) hit++;
+      const a = -Math.PI/2 + i*2*Math.PI/Math.max(nR,1), c = Math.cos(a), sn = Math.sin(a), x = cx + RL*c, y = cy + RL*sn;
+      const an = Math.abs(c) < .35 ? 'middle' : c > 0 ? 'start' : 'end';
+      // nom sur deux lignes : « FAMILLE » puis le reste
+      const w = String(f.name).trim().split(/\s+/), l1 = w.length > 1 ? w[0] : '', l2r = (w.length > 1 ? w.slice(1).join(' ') : w[0]) + ` (${k})`, l2 = l2r.length > 19 ? l2r.slice(0,18)+'…' : l2r;
+      const lines = l1 ? [l1, l2] : [l2], lh = 16, y0 = Math.abs(c) < .35 ? (sn < 0 ? y - lh*(lines.length-1) - 4 : y + 13) : y - (lines.length-1)*lh/2 + 5;
+      const col = f.status==='oui' ? '#4f6b3a' : '#b8875a', wmax = Math.max(...lines.map(t => t.length))*7.6;
+      lab += `<circle cx="${(cx+(R+7)*c).toFixed(1)}" cy="${(cy+(R+7)*sn).toFixed(1)}" r="6" fill="${col}"/>`
+        + (m ? `<rect x="${(an==='start'?x-3:an==='end'?x-wmax-3:x-wmax/2-3).toFixed(1)}" y="${(y0-13).toFixed(1)}" width="${wmax+6}" height="${lines.length*lh+4}" rx="5" fill="#ffe08a"/>` : '')
+        + `<text text-anchor="${an}" font-size="13.5" font-weight="${m?700:500}" fill="#3f2614">${lines.map((t,j)=>`<tspan x="${x.toFixed(1)}" y="${(y0+j*lh).toFixed(1)}">${esc(t)}</tspan>`).join('')}</text>`; });
+    const svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="overflow:visible"><circle cx="${cx}" cy="${cy}" r="${R}" fill="${off?'#f9d4cf':'#fbf3e4'}" stroke="${off?'#c0392b':'#a37a4e'}" stroke-width="${off?4:2}"/>
+      <text x="${cx}" y="${cy-4}" text-anchor="middle" font-size="17" font-weight="700" fill="#52331c">${esc(title.length>14?title.slice(0,13)+'…':title)}</text>
+      <text x="${cx}" y="${cy+18}" text-anchor="middle" font-size="15" font-weight="700" fill="${off?'#c0392b':'#4f6b3a'}">${cap==null?n:n+' / '+cap}</text>${lab}
+      ${nR ? '' : `<text x="${cx}" y="${cy+R+26}" text-anchor="middle" font-size="13" fill="#8e6137">Personne</text>`}</svg>`;
+    return `<section class="slc${off?' bad':''}"><h4><span>${esc(title)}</span><em>${msg}</em></h4>${svg}</section>`; };
   const html = T.map(t => { const fs = atTable(t.id); return card(t.name, fs, fs.reduce((a,[,k])=>a+k,0), t.capacity||10); });
   const un = families.filter(f => f.status !== 'non' && heads(f) > 0 && !tables.some(t => atT(f, t.id) > 0)).sort((a,b)=>a.name.localeCompare(b.name)).map(f => [f, heads(f)]);
   if (un.length){ html.push(card('Sans table', un, un.reduce((a,[,k])=>a+k,0), null)); }
