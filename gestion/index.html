@@ -1408,7 +1408,17 @@ function s3show(){ const is3 = s3mode === '3d'; $('#salle3d').hidden = !is3; $('
   if (is3) s3load().then(() => { if (!S3) s3init(); s3build(); }).catch(() => { toast('La 3D n’a pas pu se charger, vue 2D affichée'); s3mode = '2d'; s3show(); }); }
 document.querySelectorAll('[data-smode]').forEach(b => b.addEventListener('click', () => { s3mode = b.dataset.smode; s3show(); }));
 
-$('#sPrint').addEventListener('click', () => { document.querySelectorAll('.tabs button').forEach(b => { if (b.dataset.tab==='salle') b.click(); }); window.print(); });
+function s3print(){
+  const s = S3; if (!s) return; const w = window.open('', '_blank'); if (!w) return toast('Autorisez les fenêtres pour imprimer');
+  const W = 3508, H = 2480, pr = s.R.getPixelRatio(), sp = [];
+  s.sc.traverse(o => { if (o.isSprite){ sp.push([o, o.scale.clone()]); o.scale.multiplyScalar(1.5); } });
+  s.R.setPixelRatio(1); s.R.setSize(W, H, false); s.cam.aspect = W / H; s.cam.updateProjectionMatrix(); s3cam(); s.R.render(s.sc, s.cam);
+  const url = s.R.domElement.toDataURL('image/jpeg', .92);
+  sp.forEach(([o, sc]) => o.scale.copy(sc)); s.R.setPixelRatio(pr); const bw = s.box.clientWidth, bh = s.box.clientHeight; s.R.setSize(bw, bh, false); s.cam.aspect = bw / bh; s.cam.updateProjectionMatrix(); s3draw();
+  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Plan de salle 3D</title><style>@page{size:A4 landscape;margin:6mm}body{margin:0;font:14px sans-serif;text-align:center;background:#eee}img{width:100%;max-width:285mm;display:block;margin:0 auto;background:#fff}.bar{padding:10px}@media print{body{background:#fff}.bar{display:none}img{width:285mm;height:198mm;object-fit:contain}}</style></head><body><div class="bar"><button onclick="print()" style="font-size:16px;padding:8px 16px">Imprimer</button> Plan tel qu’il est affiché, sur une feuille A4 (ou A3) paysage. Tournez et zoomez la vue 3D avant pour choisir l’angle.</div><img src="${url}" alt="Plan de salle 3D"></body></html>`);
+  w.document.close();
+}
+$('#sPrint').addEventListener('click', () => { if (s3mode === '3d' && S3) return s3print(); document.querySelectorAll('.tabs button').forEach(b => { if (b.dataset.tab==='salle') b.click(); }); window.print(); });
 function renderTables(){
   const active = families.filter(f => f.status !== 'non');
   const un = active.filter(f => !f.table || !tables.some(t => t.id === f.table));
